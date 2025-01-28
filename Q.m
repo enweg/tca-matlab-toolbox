@@ -85,6 +85,20 @@ classdef Q
             mults = [mults, -1 * q.multiplier];
             result = collectTerms(Q(vars, mults));
         end
+
+         % Overload the ~ operator (logical NOT)
+        function result = not(obj)
+            if length(obj.vars) == 1 && length(regexp(obj.vars{1}, 'x\d+', 'match')) == 1
+                % If there's a single variable and it matches the pattern "x<number>"
+                vars = {['!', obj.vars{1}]}; % Prepend "!" to the variable
+                result = Q(vars, obj.multiplier(1));
+            else
+                % General case
+                vars = [{'T'}, obj.vars]; % T denotes true
+                mults = [1.0, -1 * obj.multiplier]; 
+                result = collectTerms(Q(vars, mults));
+            end
+        end
     end
 end
 

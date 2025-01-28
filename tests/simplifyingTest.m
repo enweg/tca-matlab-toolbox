@@ -161,3 +161,36 @@ function testOR(testCase)
     assert(q.multiplier(1) == 1);
 end
 
+function testNOT(testCase)
+
+    x1 = Q(1);
+    x2 = Q(2);
+
+    q = ~x1;
+    assert(isequal(q.vars{1}, '!x1'));
+
+    
+    q = ~(x1 & x2);
+    assert(length(q.vars) == 2);
+    assert(ismember('T', q.vars));
+    assert(ismember('x2 & x1', q.vars));
+    assert(q.multiplier(find(strcmp(q.vars, 'T'), 1, 'first')) == 1);
+    assert(q.multiplier(find(strcmp(q.vars, 'x2 & x1'), 1, 'first')) == -1);
+
+    q = ~(x1 | x2);
+    assert(length(q.vars) == 4);
+    assert(ismember('T', q.vars));
+    assert(ismember('x1', q.vars));
+    assert(ismember('x2', q.vars));
+    assert(ismember('x2 & x1', q.vars));
+    assert(q.multiplier(find(strcmp(q.vars, 'T'), 1, 'first')) == 1);
+    assert(q.multiplier(find(strcmp(q.vars, 'x1'), 1, 'first')) == -1);
+    assert(q.multiplier(find(strcmp(q.vars, 'x2'), 1, 'first')) == -1);
+    assert(q.multiplier(find(strcmp(q.vars, 'x2 & x1'), 1, 'first')) == 1);
+
+    q = ~x1 & ~x2;
+    assert(length(q.vars) == 1);
+    assert(isequal(q.vars{1}, '!x2 & !x1'));
+    assert(q.multiplier(1) == 1);
+end
+
