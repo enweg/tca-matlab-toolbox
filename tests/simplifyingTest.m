@@ -61,7 +61,7 @@ function testCheckContradiction(testCase)
     [hasContradictions, contradictions] = checkContradiction([1], [2, 1]);
     assert(hasContradictions);
 
-    [hasContradictions, contradictions] = checkContradiction([3, 1], [2, 1])
+    [hasContradictions, contradictions] = checkContradiction([3, 1], [2, 1]);
     assert(hasContradictions);
     assert(contradictions(1) == 0);
     assert(contradictions(2) == 1);
@@ -169,7 +169,7 @@ function testNOT(testCase)
     q = ~x1;
     assert(isequal(q.vars{1}, '!x1'));
 
-    
+
     q = ~(x1 & x2);
     assert(length(q.vars) == 2);
     assert(ismember('T', q.vars));
