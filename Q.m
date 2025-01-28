@@ -102,27 +102,35 @@ classdef Q
 
         % Overloading the display option
         function disp(obj)
-            s = strings(1, length(obj.multiplier));
+            s = "";
             for i = 1:length(obj.multiplier)
                 m = obj.multiplier(i);
                 v = obj.vars{i};
 
+                mSign = sign(m);
                 if mod(m, 1) == 0
-                    ms = num2str(floor(m));
+                    ms = num2str(floor(abs(m)));
                 else
-                    ms = num2str(m);
+                    ms = num2str(abs(m));
                 end
-                if m == -1
-                    ms = "-";
-                elseif m == 1
+                if abs(m) == 1
                     ms = "";
                 end
 
                 vs = string(v);
-                s(i) = sprintf("%sQ(%s)", ms, vs);
-            end
+                sTmp = sprintf("%sQ(%s)", ms, vs);
 
-            disp(join(s, " + "));
+                if isequal(s, "") && mSign < 0
+                    s = join("-", sTmp, "");
+                elseif isequal(s, "") && mSign > 0
+                    s = sTmp;
+                elseif mSign < 0
+                    s = join([s, sTmp], " - ");
+                else 
+                    s = join([s, sTmp], " + ");
+                end
+            end
+            disp(s);
         end
         function display(obj)
             disp(obj);
