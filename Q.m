@@ -99,6 +99,34 @@ classdef Q
                 result = collectTerms(Q(vars, mults));
             end
         end
+
+        % Overloading the display option
+        function disp(obj)
+            s = strings(1, length(obj.multiplier));
+            for i = 1:length(obj.multiplier)
+                m = obj.multiplier(i);
+                v = obj.vars{i};
+
+                if mod(m, 1) == 0
+                    ms = num2str(floor(m));
+                else
+                    ms = num2str(m);
+                end
+                if m == -1
+                    ms = "-";
+                elseif m == 1
+                    ms = "";
+                end
+
+                vs = string(v);
+                s(i) = sprintf("%sQ(%s)", ms, vs);
+            end
+
+            disp(join(s, " + "));
+        end
+        function display(obj)
+            disp(obj);
+        end
     end
 end
 
