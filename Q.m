@@ -75,6 +75,16 @@ classdef Q
                 error('Operand must be an instance of class Q');
             end
         end
+
+        % Overload the | operator (logical OR)
+        function result = or(obj1, obj2)
+            vars = [obj1.vars, obj2.vars];
+            q = obj1 & obj2;
+            vars = [vars, q.vars];
+            mults = [obj1.multiplier, obj2.multiplier];
+            mults = [mults, -1 * q.multiplier];
+            result = collectTerms(Q(vars, mults));
+        end
     end
 end
 
