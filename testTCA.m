@@ -2,5 +2,6 @@ function results = testTCA()
     addpath("./tests/");
     resultsUtils = run(utilsTest);
     resultsSimplifying = run(simplifyingTest);
-    results = [resultsUtils, resultsSimplifying];
+    resultsSystemsForm = run(systemsFormTest);
+    results = [resultsUtils, resultsSimplifying, resultsSystemsForm];
 end
