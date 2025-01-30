@@ -1,4 +1,18 @@
 function Omega = makeOmega(Phi0, Psis, Sigma, order, maxHorizon)
+    % makeOmega Construct the Omega matrix in the system representation x = Bx + Omega * ε.
+    %
+    %   Arguments:
+    %   - Phi0 (matrix): Impact matrix for the shocks.
+    %   - Psis (cell array of matrices): MA terms for the dynamic model.
+    %   - Sigma (matrix): Covariance matrix of the reduced form errors.
+    %   - order (vector): Ordering of variables.
+    %   - maxHorizon (integer): Maximum IRF horizon.
+    %
+    %   Returns:
+    %   - Omega (matrix): Part of the systems form. 
+    %
+    %   See also makeB, makeSystemsForm
+
     % 1. Creating the transmission matrix
     T = permmatrix(order);
     K = size(Sigma, 1);
