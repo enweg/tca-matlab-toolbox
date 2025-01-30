@@ -7,5 +7,8 @@ function q = makeCondition(s)
         eval(sprintf('%s = Q(''%s'');', v, v)); 
     end
     
-    q = eval(s);
+    % matlab uses ~ for not, while we use the more standard !. 
+    % Users could just use ~ and it would work, but we will make sure that !
+    % also works
+    q = eval(strrep(s, '!', '~'));
 end
