@@ -62,7 +62,7 @@ classdef Q
                 result = removeContradictions(q);
               else
                 % General case when both have multiple variables
-                qs = arrayfun(@(i) obj1 & Q(obj2.vars{i}, obj2.multiplier(i)), 1:length(obj1.vars), 'UniformOutput', false);
+                qs = arrayfun(@(i) obj1 & Q(obj2.vars{i}, obj2.multiplier(i)), 1:length(obj2.vars), 'UniformOutput', false);
                 vars = {};
                 mults = [];
                 for ii=1:numel(qs)

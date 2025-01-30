@@ -1,9 +1,9 @@
 function s = stringAnd(s1, s2)
-    if s2 == 'T'
+    if isequal(s2, 'T')
         s = s1;
         return;
     end
-    if s1 == 'T'
+    if isequal(s1, 'T')
         s = s2; 
         return;
     end

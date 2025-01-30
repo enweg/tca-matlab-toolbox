@@ -3,5 +3,6 @@ function results = testTCA()
     resultsUtils = run(utilsTest);
     resultsSimplifying = run(simplifyingTest);
     resultsSystemsForm = run(systemsFormTest);
-    results = [resultsUtils, resultsSimplifying, resultsSystemsForm];
+    resultsTransmission = run(transmissionTest);
+    results = [resultsUtils, resultsSimplifying, resultsSystemsForm, resultsTransmission];
 end

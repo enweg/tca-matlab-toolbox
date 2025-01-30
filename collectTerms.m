@@ -23,6 +23,12 @@ function q_out = collectTerms(q)
     vars = vars(non_zero_mult);
     mult = mult(non_zero_mult);
 
+    % if all mults are zero return zero
+    if all(mult == 0)
+        q_out = Q('T', 0);
+        return;
+    end
+
     % Create a new Q object with filtered variables and multipliers
     q_out = Q(vars, mult);
 end
