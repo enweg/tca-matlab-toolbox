@@ -16,12 +16,12 @@ function s = stringAnd(s1, s2)
     matches = regexp(combined, pattern, 'match');
     
     % Sort the matches in reverse order
-    unique_matches = unique(matches, 'stable');
+    uniqueMatches = unique(matches, 'stable');
     % same as sort descend but matlab does not support sort descend for 
     % character cell arrays
-    sorted_matches = flip(sort(unique_matches));
+    sortedMatches = flip(sort(uniqueMatches));
     
     % Combine the sorted matches with ' & '
-    s = strjoin(sorted_matches, ' & ');
+    s = strjoin(sortedMatches, ' & ');
 end
 

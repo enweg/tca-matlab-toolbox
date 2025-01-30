@@ -11,7 +11,7 @@ function Omega = makeOmega(Phi0, Psis, Sigma, order, maxHorizon)
     Psis = cellfun(@(Psi) D * L * T * Psi * Phi0, Psis, 'UniformOutput', false);
     
     % 4. Creating Omega
-    row_block = [cell2mat(fliplr(Psis)) D * Qt];
+    rowBlock = [cell2mat(fliplr(Psis)) D * Qt];
     Omega = zeros(K * (maxHorizon + 1), K * (maxHorizon + 1));
-    Omega = slideIn(Omega, row_block);
+    Omega = slideIn(Omega, rowBlock);
 end
