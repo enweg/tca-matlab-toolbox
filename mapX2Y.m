@@ -1,4 +1,4 @@
-function strY = mapY2X(strX, order)
+function strY = mapX2Y(strX, order)
     strY = strX;
     pattern = 'x(\d+)';
     matches = regexp(strX, pattern, 'tokens');
