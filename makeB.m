@@ -1,16 +1,16 @@
 function B = makeB(As, Sigma, order, maxHorizon)
-    % makeB Construct the matrix B in the system representation x = Bx + Omega * ε.
+    % `makeB` Construct the matrix B in the system representation $x = Bx + \Omega\varepsilon$.
     %
-    % Arguments:
-    %   - As (cell array of matrices): Autoregressive coefficient matrices.
-    %   - Sigma (matrix): Covariance matrix of the shocks.
-    %   - order (vector): Ordering of variables given by the transmission matrix.
-    %   - maxHorizon (integer): Maximum IRF horizon.
+    %   ## Arguments
+    %   - `As` (cell array of matrices): Autoregressive coefficient matrices.
+    %   - `Sigma` (matrix): Covariance matrix of the shocks.
+    %   - `order` (vector): Ordering of variables given by the transmission matrix.
+    %   - `maxHorizon` (integer): Maximum IRF horizon.
     %
-    % Returns:
-    %   - B (matrix): Part of the sytems representation.
+    %   ## Returns
+    %   - `B` (matrix): Part of the sytems representation.
     %
-    %   See also makeOmega, makeSystemsForm.
+    %   See also `makeOmega`, `makeSystemsForm`
 
     % 1. Creating the transmission matrix
     T = permmatrix(order);

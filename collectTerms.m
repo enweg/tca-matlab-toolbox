@@ -1,19 +1,20 @@
 function qOut = collectTerms(q)
-    % collectTerms Collect and sum multipliers for identical Boolean terms.
+    % `collectTerms` Collect and sum multipliers for identical Boolean terms.
     %
-    %   qOut = collectTerms(q) collects all terms Q(b) where the Boolean statement 
-    %   b is the same and sums their multipliers. The result is a transmission 
+    %   `qOut = collectTerms(q)` collects all terms $Q(b)$ where the Boolean statement 
+    %   $b$ is the same and sums their multipliers. The result is a transmission 
     %   condition where each term appears only once, but with possibly different 
     %   multipliers (not restricted to ±1).
     %
-    %   Arguments:
-    %   - q (Q): A transmission condition. See also Q.
+    %   ## Arguments
+    %   - `q` (Q): A transmission condition. See also `Q`.
     %
-    %   Returns:
-    %   - qOut (Q): A new transmission condition where identical terms have been 
+    %   ## Returns
+    %   - `qOut` (Q): A new transmission condition where identical terms have been 
     %     combined with summed multipliers.
     %
-    %   Example:
+    %   ## Example
+    %   ```
     %   q = Q({"x1", "x1"}, [1, 1]);  
     %   collectTerms(q)
     %   % Output: Q({"x1"}, 2)
@@ -21,6 +22,7 @@ function qOut = collectTerms(q)
     %   q = Q({"x1", "T", "x1"}, [1, 1, -1]);  
     %   collectTerms(q)
     %   % Output: Q({"T"}, 1)
+    %   ```
 
 
     % Initialize a map to store terms

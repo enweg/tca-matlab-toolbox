@@ -1,29 +1,28 @@
 function effects = transmissionBOmega(from, B, Omega, varAnd, varNot, multiplier)
-    % transmissionBOmega Compute the transmission effect using the BOmega method.
+    % `transmissionBOmega` Compute the transmission effect using the `BOmega` method.
     %
-    %   effects = transmissionBOmega(from, B, Omega, varAnd, varNot, multiplier) 
-    %   calculates the transmission effect based on the systems form `x = Bx + Ωε`. 
+    %   `effects = transmissionBOmega(from, B, Omega, varAnd, varNot, multiplier)` 
+    %   calculates the transmission effect based on the systems form $x = Bx + \Omega\varepsilon$. 
     %
-    %   Arguments:
-    %   - from (integer): Index of the shock.
-    %   - B (matrix): See the systems form.
-    %   - Omega (matrix): See the systems form.
-    %   - varAnd (cell array of vectors): Each cell contains a vector of variable 
+    %   ## Arguments
+    %   - `from` (integer): Index of the shock.
+    %   - `B` (matrix): See the systems form.
+    %   - `Omega` (matrix): See the systems form.
+    %   - `varAnd` (cell array of vectors): Each cell contains a vector of variable 
     %     indices that must be included (AND conditions). Can be obtained using 
-    %     getVarNumsAndMultiplier.
-    %   - varNot (cell array of vectors): Each cell contains a vector of variable 
+    %     `getVarNumsAndMultiplier`.
+    %   - `varNot` (cell array of vectors): Each cell contains a vector of variable 
     %     indices that must be excluded (NOT conditions). Can be obtained using 
-    %     getVarNumsAndMultiplier.
-    %   - multiplier (vector of numbers): Multipliers associated with each term.
-    %     Can be obtained using getVarNumsAndMultiplier.
+    %     `getVarNumsAndMultiplier`.
+    %   - `multiplier` (vector of numbers): Multipliers associated with each term.
+    %     Can be obtained using `getVarNumsAndMultiplier`.
     %
-    %   Returns:
-    %   - effects (vector): A vector where entry `i` corresponds to the transmission 
-    %     effect on variable `x_i`. If `x_k` is the variable in the transmission 
-    %     condition with the highest index, all entries in the returned vector with 
-    %     index less than `k` are set to zero.
+    %   ## Returns
+    %   - `effects` (vector): A vector where entry `i` corresponds to the transmission 
+    %     effect on variable `x_i`. 
     %
-    %   Example:
+    %   ## Example
+    %   ```
     %   k = 6;
     %   h = 3;
     %   s = "(x1 | x2) & !x3";
@@ -34,11 +33,12 @@ function effects = transmissionBOmega(from, B, Omega, varAnd, varNot, multiplier
     %
     %   [varAnd, varNot, multiplier] = getVarNumsAndMultiplier(cond);
     %   effect = transmissionBOmega(1, B, Omega, varAnd, varNot, multiplier);
+    %   ```
     %
-    %   WARNING: 
+    %  ##  WARNING 
     %  Internal function. Should not be called by users directly. 
     %
-    %   See also transmission, applyAndToB, applyNotToB, getVarNumsAndMultiplier
+    %   See also `transmission`, `applyAndToB`, `applyNotToB`, `getVarNumsAndMultiplier`
     effects = cell(1, length(varAnd));
     for ii = 1:length(varAnd)
         vAnd = varAnd{ii};

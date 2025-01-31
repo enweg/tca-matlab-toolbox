@@ -1,13 +1,13 @@
 function q = removeContradictions(q)
-    % removeContradictions Remove contradicting terms from a transmission condition.
+    % `removeContradictions` Remove contradicting terms from a transmission condition.
     %
-    %   q = removeContradictions(q) removes terms that contain contradictions of 
-    %   the form "x_i & !x_i", which always evaluate to false and contribute zero 
+    %   `q = removeContradictions(q)` removes terms that contain contradictions of 
+    %   the form `x_i & !x_i`, which always evaluate to false and contribute zero 
     %   to the transmission effect. Behaviour of the function can be changed by 
     %   setting `REMOVECONTRADICTIONS=false` locally.
     %
     %   Arguments:
-    %   - q (Q): A transmission condition. See also Q and makeCondition.
+    %   - `q` (Q): A transmission condition. See also `Q` and `makeCondition`.
     %
     %   Returns:
     %   - If `REMOVECONTRADICTIONS` is set to `false`, the input `q` is returned unchanged.
@@ -17,7 +17,8 @@ function q = removeContradictions(q)
     %       2. If some terms are non-contradicting, only the non-contradicting terms 
     %          are retained in the output.
     %
-    %   Example:
+    %   ## Example
+    %   ```
     %   `REMOVECONTRADICTIONS = true;`
     %   
     %   q = Q("x1", 1);
@@ -28,8 +29,9 @@ function q = removeContradictions(q)
     %
     %   q = Q({"x1 & !x1", "x1 & x2"}, [1, 1]);
     %   q = removeContradictions(q); % Returns Q("x2 & x1", 1).
+    %   ```
     %
-    %   Notes:
+    %   ## Notes
     %   - If `REMOVECONTRADICTIONS` is not explicitly set, contradictions are removed by default.
 
     % If user does not define otherwise, we remove contradictions
