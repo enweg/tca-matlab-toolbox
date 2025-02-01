@@ -236,6 +236,30 @@ classdef Q
 
         % Overloading the display option
         function disp(obj, order)
+            % `disp` Display a transmission condition in either systems form or dynamic form.
+            %
+            %   `disp(q)` displays the transmission condition using the systems form notation.
+            %
+            %   `disp(q, order)` displays the transmission condition using the dynamic form 
+            %   notation, where `order` is the variable ordering defined by the transmission 
+            %   matrix.
+            %
+            %   ## Arguments
+            %   - `q` (Q): A transmission condition.
+            %   - `order` (vector of integers, optional): The variable ordering defined 
+            %     by the transmission matrix. If provided, the condition is displayed 
+            %     using the dynamic form notation.
+            %
+            %   ## Example
+            %   ```
+            %   q = makeCondition("x1 | x2");
+            %
+            %   disp(q); % Displays condition in systems form.
+            %
+            %   order = [3, 1, 2];  
+            %   disp(q, order); % Displays condition in dynamic form.
+            %   ```
+
             s = "";
             for i = 1:length(obj.multiplier)
                 m = obj.multiplier(i);
