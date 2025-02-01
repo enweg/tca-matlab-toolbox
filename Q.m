@@ -235,7 +235,11 @@ classdef Q
         end
 
         % Overloading the display option
-        function disp(obj)
+        function disp(obj, show_as_y, order)
+            if nargin == 1
+                show_as_y = false;
+            end
+
             s = "";
             for i = 1:length(obj.multiplier)
                 m = obj.multiplier(i);
@@ -264,7 +268,13 @@ classdef Q
                     s = join([s, sTmp], " + ");
                 end
             end
-            disp(s);
+
+            if nargin == 3 && show_as_y
+                s = mapX2Y(s, order);
+                disp(s);
+            else
+                disp(s);
+            end
         end
         function display(obj)
             disp(obj);
