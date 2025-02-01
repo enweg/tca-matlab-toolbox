@@ -19,23 +19,33 @@ function q = removeContradictions(q)
     %
     %   ## Example
     %   ```
-    %   `REMOVECONTRADICTIONS = true;`
+    %   setRemoveContradictions(true); % on by default
     %   
-    %   q = Q("x1", 1);
+    %   q = Q('x1', 1);
     %   q = removeContradictions(q); % Returns q unchanged (no contradictions).
     %
-    %   q = Q("x1 & !x1", 1);
-    %   q = removeContradictions(q); % Returns Q("T", 0).
+    %   q = Q('x1 & !x1', 1);
+    %   q = removeContradictions(q); % Returns Q('T', 0).
     %
-    %   q = Q({"x1 & !x1", "x1 & x2"}, [1, 1]);
-    %   q = removeContradictions(q); % Returns Q("x2 & x1", 1).
+    %   q = Q({'x1 & !x1', 'x1 & x2'}, [1, 1]);
+    %   q = removeContradictions(q); % Returns Q('x2 & x1', 1).
+    %
+    %   setRemoveContradictions(false);
+    %
+    %   q = Q('x1 & !x1', 1);
+    %   q = removeContradictions(q); % Returns the original q.
     %   ```
     %
     %   ## Notes
     %   - If `REMOVECONTRADICTIONS` is not explicitly set, contradictions are removed by default.
 
     % If user does not define otherwise, we remove contradictions
-    if exist('REMOVECONTRADICTIONS') == 1 && ~REMOVECONTRADICTIONS 
+    global REMOVECONTRADICTIONS
+    if isempty(REMOVECONTRADICTIONS)
+        REMOVECONTRADICTIONS = true;
+    end
+    if ~REMOVECONTRADICTIONS 
+        disp('INFO: not removing contradictions.')
         return;
     end
 
