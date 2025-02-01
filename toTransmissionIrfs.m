@@ -29,7 +29,7 @@ function irfs = toTransmissionIrfs(irfs)
     %     follow the same principle, but with the first `n_variables` columns being
     %     zero because the shocks are time t shocks which cannot affect time t-1
     %     variables. 
-    [k, ~, maxHorizon] = size(irfs);
+    [k, ns, maxHorizon] = size(irfs);
     maxHorizon = maxHorizon - 1;
     
     % Reshape the 3D array into a 2D matrix by stacking along the third dimension
@@ -38,7 +38,7 @@ function irfs = toTransmissionIrfs(irfs)
     % Construct the output matrix
     irfsNew = [];
     for h = 0:maxHorizon
-        padding = zeros(k * h, k);
+        padding = zeros(k * h, ns);
         truncated = irfs(1:end - k * h, :);
         irfsNew = [irfsNew, [padding; truncated]];
     end
