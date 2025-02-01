@@ -45,7 +45,6 @@ function q = removeContradictions(q)
         REMOVECONTRADICTIONS = true;
     end
     if ~REMOVECONTRADICTIONS 
-        disp('INFO: not removing contradictions.')
         return;
     end
 
