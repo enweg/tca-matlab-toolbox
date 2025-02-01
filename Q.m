@@ -235,11 +235,7 @@ classdef Q
         end
 
         % Overloading the display option
-        function disp(obj, show_as_y, order)
-            if nargin == 1
-                show_as_y = false;
-            end
-
+        function disp(obj, order)
             s = "";
             for i = 1:length(obj.multiplier)
                 m = obj.multiplier(i);
@@ -269,7 +265,7 @@ classdef Q
                 end
             end
 
-            if nargin == 3 && show_as_y
+            if nargin == 2
                 s = mapX2Y(s, order);
                 disp(s);
             else
