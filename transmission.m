@@ -40,7 +40,6 @@ function effects = transmission(from, arr1, arr2, q, method)
     %   Omega = randn(k*(h+1), k*(h+1));
     %
     %   effect = transmission(1, B, Omega, cond, "BOmega");
-    %   effect = transmission(1, B, Omega, cond);  % Same as above, since default is "BOmega".
     %
     %   irfs = randn(k, k, h+1);
     %   irfsOrtho = randn(k, k, h+1);

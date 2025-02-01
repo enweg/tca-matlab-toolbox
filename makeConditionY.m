@@ -1,5 +1,5 @@
 function q = makeConditionY(strY, order)
-    % `makeCondition` Create a transmission condition from a Boolean string using dyanmic form variables.
+    % `makeConditionY` Create a transmission condition from a Boolean string using dyanmic form variables.
     %
     %   `q = makeConditionY(strY, order)` constructs a transmission condition $Q(b)$ 
     %   from a Boolean statement specified in terms of dynamic system variables 

@@ -9,6 +9,7 @@ function q = notThrough(idx, horizons, order)
     %   ## Arguments
     %
     %   **For a single variable:**
+    %
     %   - `idx` (integer): Index of the variable that paths cannot go through, 
     %     using its original index in the dynamic system (before transmission ordering).
     %   - `horizons` (vector of integers): Time horizons at which the paths cannot 
@@ -17,6 +18,7 @@ function q = notThrough(idx, horizons, order)
     %     transmission matrix.
     %
     %   **For multiple variables:**
+    %
     %   - `idx` (vector of integers): Indices of the variables that paths cannot 
     %     go through, using their original indices in the dynamic system.
     %   - `horizons` (cell array of vectors): Each element specifies the time 
