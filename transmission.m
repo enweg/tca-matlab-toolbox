@@ -1,4 +1,4 @@
-function effects = transmission(from, arr1, arr2, q, method)
+function effects = transmission(from, arr1, arr2, q, method, order)
     % `transmission` Compute the transmission effect given a transmission condition.
     %
     %   `effects = transmission(from, arr1, arr2, q, method)` calculates the 
@@ -22,6 +22,7 @@ function effects = transmission(from, arr1, arr2, q, method)
     %   - `method` (string): Specifies the calculation method:
     %       - `"BOmega"` uses the systems form.
     %       - `"irf"` uses only IRFs and can thus be used with local projections.
+    %   - `order` (vector, optional): variable ordering as defined by the transmission matrix.
     %
     %   ## Returns:
     %   - `effects` (vector): A vector where entry `i` corresponds to the transmission 
@@ -53,6 +54,13 @@ function effects = transmission(from, arr1, arr2, q, method)
     %   ## Notes:
     %   - If `method = "BOmega"`, the function applies `transmissionBOmega`.
     %   - If `method = "irf"`, the function applies `transmissionIrfs`.
+    %   - If `order` is provided, the returned effects will be a 3D array 
+    %     of dimension (nVariables, 1, horizons) where the variables are in the 
+    %     original ordering (before applying the transmission matrix).
+    %   - If `order` is not provided, the returned effects will be a (nVariable*horizons, 1)
+    %     dimensional vector following the ordering after applying the transmission 
+    %     matrix. This is similar to the matrix obtained via $(I - B)^{-1}\Omega$
+    %     using the matrices from the systems form.
     %
     %   See also `transmissionBOmega`, `transmissionIrfs`, `makeCondition`, `through`, `notThrough`
     [varAnd, varNot, multiplier] = getVarNumsAndMultiplier(q);
@@ -78,5 +86,17 @@ function effects = transmission(from, arr1, arr2, q, method)
         end
     else
         error("Unrecognised method. Must be either BOmega or irf");
+    end
+
+    if nargin == 6
+        % The case when order has been defined
+        T = permmatrix(order);  % applying transpose inverses order
+        k = length(order);
+        horizon = size(effects, 1) / k;
+        effect_tensor = zeros(k, 1, horizon);
+        for h = 1:horizon
+            effect_tensor(:, :, h) = T' * effects(((h-1)*k+1):(h*k));
+        end
+        effects = effect_tensor;
     end
 end
