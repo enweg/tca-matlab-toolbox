@@ -279,7 +279,7 @@ classdef Q
                 sTmp = sprintf("%sQ(%s)", ms, vs);
 
                 if isequal(s, "") && mSign < 0
-                    s = join("-", sTmp, "");
+                    s = join(["-", sTmp], "");
                 elseif isequal(s, "") && mSign > 0
                     s = sTmp;
                 elseif mSign < 0
