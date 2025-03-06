@@ -1,0 +1,147 @@
+Starting Dynare (version 5.5-arm64).
+Calling Dynare with arguments: none
+Starting preprocessing of the model file ...
+Found 25 equation(s).
+Evaluating expressions...done
+Computing static model derivatives (order 1).
+Computing dynamic model derivatives (order 2).
+Processing outputs ...
+done
+Preprocessing completed.
+
+
+
+
+
+Residuals of the static equations:
+
+Equation number 1 : 0 : New Keynesian Phillips Curve eq. (22)
+Equation number 2 : 0 : Dynamic IS Curve eq. (23)
+Equation number 3 : 0 : Interest Rate Rule eq. (26)
+Equation number 4 : 0 : Definition natural rate of interest eq. (24)
+Equation number 5 : 0 : Definition real interest rate
+Equation number 6 : 0 : Definition natural output, eq. (20)
+Equation number 7 : 0 : Definition output gap
+Equation number 8 : 0 : Monetary policy shock
+Equation number 9 : 0 : TFP shock
+Equation number 10 : 0 : Production function (eq. 14)
+Equation number 11 : 0 : Preference shock, p. 54
+Equation number 12 : 0 : Money growth (derived from eq. (4))
+Equation number 13 : 0 : Real money demand (eq. 4)
+Equation number 14 : 0 : Annualized nominal interest rate
+Equation number 15 : 0 : Annualized real interest rate
+Equation number 16 : 0 : Annualized natural interest rate
+Equation number 17 : 0 : Annualized inflation
+Equation number 18 : 0 : Output deviation from steady state
+Equation number 19 : 0 : Definition price level
+Equation number 20 : 0 : resource constraint, eq. (12)
+Equation number 21 : 0 : FOC labor, eq. (2)
+Equation number 22 : 0 : definition real wage
+Equation number 23 : 0 : definition nominal money stock
+Equation number 24 : 0 : average price markup, eq. (18)
+Equation number 25 : 0 : average price markup, eq. (20)
+
+
+
+STEADY-STATE RESULTS:
+
+pi           		 0
+y_gap        		 0
+y_nat        		 0
+y            		 0
+yhat         		 0
+r_nat        		 0
+r_real       		 0
+i            		 0
+n            		 0
+m_real       		 0
+m_growth_ann 		 0
+m_nominal    		 0
+nu           		 0
+a            		 0
+r_real_ann   		 0
+i_ann        		 0
+r_nat_ann    		 0
+pi_ann       		 0
+z            		 0
+p            		 0
+w            		 0
+c            		 0
+w_real       		 0
+mu           		 0
+mu_hat       		 0
+
+EIGENVALUES:
+         Modulus             Real        Imaginary
+
+               0                0                0
+               0                0                0
+             0.5              0.5                0
+             0.5              0.5                0
+             0.9              0.9                0
+               1                1                0
+           1.182            1.154           0.2533
+           1.182            1.154          -0.2533
+
+
+There are 2 eigenvalue(s) larger than 1 in modulus 
+for 2 forward-looking variable(s)
+
+The rank condition is verified.
+
+
+MODEL SUMMARY
+
+  Number of variables:         25
+  Number of stochastic shocks: 3
+  Number of state variables:   6
+  Number of jumpers:           2
+  Number of static variables:  17
+
+
+MATRIX OF COVARIANCE OF EXOGENOUS SHOCKS
+Variables       eps_a    eps_nu     eps_z
+eps_a        1.000000  0.000000  0.000000
+eps_nu       0.000000  0.062500  0.000000
+eps_z        0.000000  0.000000  0.250000
+
+POLICY AND TRANSITION FUNCTIONS
+                                  pi               i           y_gap
+nu(-1)                     -0.176144        0.171013       -0.518170
+a(-1)                      -0.272594       -0.318026       -0.173084
+z(-1)                       0.088072        0.164493        0.259085
+eps_a                      -0.302882       -0.353362       -0.192315
+eps_nu                     -0.352287        0.342027       -1.036340
+eps_z                      -0.176144       -0.328987       -0.518170
+
+
+THEORETICAL MOMENTS
+VARIABLE         MEAN  STD. DEV.   VARIANCE
+pi             0.0000     0.7096     0.5035
+i              0.0000     0.8385     0.7030
+y_gap          0.0000     0.6113     0.3737
+
+
+
+VARIANCE DECOMPOSITION (in percent)
+          eps_a  eps_nu   eps_z
+pi        95.89    2.05    2.05
+i         93.48    1.39    5.13
+y_gap     52.10   23.95   23.95
+
+
+
+MATRIX OF CORRELATIONS
+Variables        pi       i   y_gap
+pi           1.0000  0.9624  0.8471
+i            0.9624  1.0000  0.7511
+y_gap        0.8471  0.7511  1.0000
+
+
+
+COEFFICIENTS OF AUTOCORRELATION
+Order          1       2       3       4       5
+pi        0.8836  0.7870  0.7042  0.6317  0.5675
+i         0.8739  0.7735  0.6896  0.6174  0.5540
+y_gap     0.7084  0.5417  0.4397  0.3717  0.3226
+Total computing time : 0h00m02s
