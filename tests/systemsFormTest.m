@@ -39,10 +39,10 @@ function testSystemsForm(testCase)
     BTest = makeB(As, Sigma, 1:3, 1);
     assert(all(max(abs(BTest - B(1:6, 1:6)), [], 'all') < sqrt(eps())));
 
-    OmegaTest = makeOmega(A0inv, Psis, Sigma, 1:3, 3);
+    OmegaTest = makeOmega(A0inv, Psis, 1:3, 3);
     assert(all(max(abs(OmegaTest - Omega), [], 'all') < sqrt(eps())));
 
-    OmegaTest = makeOmega(A0inv, Psis, Sigma, 1:3, 1);
+    OmegaTest = makeOmega(A0inv, Psis, 1:3, 1);
     assert(all(max(abs(OmegaTest - Omega(1:6, 1:6)), [], 'all') < sqrt(eps())));
 end
 
