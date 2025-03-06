@@ -1,0 +1,5 @@
+Starting Dynare (version 5.5-arm64).
+Calling Dynare with arguments: clear_all=0
+Unknown option: clear_all=0
+Dynare usage: dynare mod_file [debug] [noclearall] [onlyclearglobals] [savemacro[=macro_file]] [onlymacro] [linemacro] [notmpterms] [nolog] [warn_uninit] [console] [nograph] [nointeractive] [parallel[=cluster_name]] [conffile=parallel_config_path_and_filename] [parallel_slave_open_mode] [parallel_test] [parallel_use_psexec=true|false] [-D<variable>[=<value>]] [-I/path] [nostrict] [stochastic] [fast] [minimal_workspace] [compute_xrefs] [output=second|third] [language=matlab|julia] [params_derivs_order=0|1|2] [transform_unary_ops] [exclude_eqs=<equation_tag_list_or_file>] [include_eqs=<equation_tag_list_or_file>] [json=parse|check|transform|compute] [jsonstdout] [onlyjson] [jsonderivsimple] [nopathchange] [nopreprocessoroutput] [mexext=<extension>] [matlabroot=<path>] [onlymodel] [notime] [use_dll] [nocommutativity]
+

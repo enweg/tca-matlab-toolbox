@@ -1,8 +1,9 @@
-function results = testTCA()
+function results = testTCA(dynarePath)
     addpath("./tests/");
     resultsUtils = run(utilsTest);
     resultsSimplifying = run(simplifyingTest);
     resultsSystemsForm = run(systemsFormTest);
     resultsTransmission = run(transmissionTest);
-    results = [resultsUtils, resultsSimplifying, resultsSystemsForm, resultsTransmission];
+    resultsDynare = run(dynareTest);
+    results = [resultsUtils, resultsSimplifying, resultsSystemsForm, resultsTransmission, resultsDynare];
 end
