@@ -19,7 +19,7 @@ function order = defineOrder(vars, options_)
     %
     %   See also `transmission`, `through`, `notThrough`, `makeSystemsForm`.
     varsOriginal = dynareCellArrayToVec(options_.varobs);
-    order = zeros(length(vars))
+    order = zeros(length(vars), 1)
     for ii = 1:length(vars)
         order(ii) = find(varsOriginal == vars(ii));
     end
