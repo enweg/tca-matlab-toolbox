@@ -12,7 +12,7 @@ function Omega = makeOmega(Phi0, Psis, order, maxHorizon)
     %
     %   See also `makeB`, `makeSystemsForm`
 
-    Sigma = Phi0 * Phi0'
+    Sigma = Phi0 * Phi0';
 
     % 1. Creating the transmission matrix
     T = permmatrix(order);

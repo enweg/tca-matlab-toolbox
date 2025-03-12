@@ -19,6 +19,7 @@ function [B, Omega] = makeSystemsForm(Phi0, As, Psis, order, maxHorizon)
     %   See also `makeB`, `makeOmega`.
 
     % 1. Create B and Omega using helper functions
+    Sigma = Phi0 * Phi0';
     B = makeB(As, Sigma, order, maxHorizon);
     Omega = makeOmega(Phi0, Psis, order, maxHorizon);
 end
