@@ -1,7 +1,30 @@
-% References: 
-%   - Morris, S. D. (2016). VARMA representation of DSGE models. 
-%     Economics Letters, 138, 30–33. https://doi.org/10.1016/j.econlet.2015.11.027
 function [A, B, C, D]=getABCD(M_, oo_, options_)
+    % `getABCD` Obtain the ABCD state-space representation of a DSGE model.
+    %
+    %   `[A, B, C, D] = getABCD(M_, oo_, options_)` computes the state-space
+    %   representation 
+    %   $$
+    %   \begin{split}
+    %   x_t &= Ax_{t-1} + B\varepsilon_t \\ 
+    %   y_t &= Cx_{t-1} + D\varepsilon_t
+    %   \end{split}
+    %   of a DSGE model estimated using Dynare. Only the minimal state 
+    %   representation is returned. 
+    %
+    %   ## Arguments
+    %   - `M_` (struct): Returned by Dynare. 
+    %   - `oo_` (struct): Returned by Dynare. 
+    %   - `options_` (struct): Returned by Dynare. 
+    %
+    %   ## Returns
+    %   - `A` (matrix): State transition matrix. See above equation.
+    %   - `B` (matrix): Control input matrix capturing exogenous shocks. See above equation.
+    %   - `C` (matrix): Observation matrix mapping state variables to observed variables. See above equation.
+    %   - `D` (matrix): Observation noise matrix. See above equation.
+    %
+    %   ## Notes
+    %   - Requires MATLAB's Control Toolbox. 
+    %
 
     if ~isfield(options_,'varobs_id')
         warning('getABCD: No observables have been defined using the varobs-command.')

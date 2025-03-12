@@ -1,21 +1,39 @@
 function [Phi0, As, Psis, p, q] = dynareToVarma(M_, oo_, options_, maxKappa)
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % x_t = Ax_{t-1} + B\varepsilon_t
-    % y_t = Cx_{t-1} + D\varepsilon_t
-    % x_t is the state vector, y_t is the observed vector (defined under the 
-    % varobs block in dynare mod file)
+    % `dynareToVarma` Transform a DSGE model into a VARMA representation.
     %
-    % Output model is a SVARMA
-    % A_0y_t = A_1y_{t-1} + ... + A_py_{t-p} + \varepsilon_t 
-    %        + Psi_1\varepsilon_{t-1} + ... + Psi_{t-q}\varepsilon_{t-q}
-    % As = {A_0, A_1, ...}
-    % Psis = {Psi_0, Psi_1, ...}
+    %   `[Phi0, As, Psis, p, q] = dynareToVarma(M_, oo_, options_, maxKappa)`
+    %   converts a linearized DSGE model estimated using Dynare into a VARMA form,
+    %   following the method of Morris (2016).
     %
+    %   ## Arguments
+    %   - `M_` (struct): Returned by Dynare. 
+    %   - `oo_` (struct): Returned by Dynare. 
+    %   - `options_` (struct): Returned by Dynare. 
+    %   - `maxKappa` (integer, optional): Tuning parameter in Morris (2016). 
+    %      Related to the maximum AR order via `maxArOrder=maxKappa+1`.
+    %      Defaults to 20. 
     %
-    % IMPORTANT: original version retuned SVARMA from above. This version returns 
-    % VARMA version plus Phi0 -- the contemporaneous impact matrix. 
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+    %   ## Returns
+    %   - `Phi0` (matrix): Impact matrix linking structural shocks to reduced-form errors.
+    %   - `As` (cell array): AR coefficient matrices `{A_1, A_2, ..., A_p}`.
+    %   - `Psis` (cell array): MA coefficient matrices `{Psi_1, Psi_2, ..., Psi_q}`.
+    %   - `p` (integer): The determined autoregressive order of the VARMA representation.
+    %   - `q` (integer): The determined moving average order of the VARMA representation.
+    %
+    %   ## Methodology
+    %   The function follows the approach outlined in Morris (2016) and returns
+    %   a VARMA of the form: 
+    %   $$
+    %   y_t = \sum_{i=1}^{p} A_i y_{t-i} + \sum_{j=1}^{q} \Psi_j u_{t-j} + u_t,
+    %   $$
+    %   where:
+    %   - $u_t = \Phi_0 \varepsilon_t$, with $\varepsilon_t$ being structural shocks.
+    %
+    %   ## Reference
+    %   - Morris, S. D. (2016). "VARMA representation of DSGE models." *Economics Letters*, 138, 30–33.
+    %     [https://doi.org/10.1016/j.econlet.2015.11.027](https://doi.org/10.1016/j.econlet.2015.11.027)
+    %
+    %   See also `getABCD`, `varmaIrfs`.
 
     if ~isfield(options_, "varobs")
         error("dynareToVarma: No observed variables were defined in the mod file.")
@@ -61,9 +79,6 @@ function [Phi0, As, Psis, p, q] = dynareToVarma(M_, oo_, options_, maxKappa)
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
     % Case II: Follow the general proposition of Morris 2016
     % but adjusted for our notation.
-    %
-    % Morris, S. D. (2016). VARMA representation of DSGE models. 
-    % Economics Letters, 138, 30–33. https://doi.org/10.1016/j.econlet.2015.11.027
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
     kappa = 0;
     F = [C];
@@ -105,9 +120,6 @@ function [Phi0, As, Psis, p, q] = dynareToVarma(M_, oo_, options_, maxKappa)
         G{col} = Gcol;
     end
 
-    % Premultiplication of As{1} below is because we form the structural VARMA 
-    % representation and thus need to pre-multiply all non-structural VARMA 
-    % matrices by As{1} = A_0.
     As = cell(1, kappa+1);
     Phi0 = ThetaPlus * FPlus * G{1};
     Phi0 = Phi0 * S;  % because of how dynare handles shock sizes
