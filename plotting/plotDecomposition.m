@@ -1,4 +1,4 @@
-function plotDecomposition(idxOutcome, irfs, cellChannelEffects, channelNames, ylabelText)
+function fig = plotDecomposition(idxOutcome, irfs, cellChannelEffects, channelNames, ylabelText)
     total = vec(irfs(idxOutcome, 1, :));
     channelEffects = vec(cellChannelEffects{1}(idxOutcome, 1, :));
     for ii = 2:length(cellChannelEffects)
