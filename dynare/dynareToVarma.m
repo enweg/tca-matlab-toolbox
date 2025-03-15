@@ -39,11 +39,6 @@ function [Phi0, As, Psis, p, q] = dynareToVarma(M_, oo_, options_, maxKappa)
         error("dynareToVarma: No observed variables were defined in the mod file.")
     end
 
-    % Dynare handles shock sizes seperately. Let's get these first. 
-    S = sqrt(M_.Sigma_e);
-    % S = eye(size(M_.Sigma_e, 1));
-    SInv = inv(S);
-
     % Default choice for maximum VAR order following notation in Morris 2016. 
     if nargin==3
         maxKappa = 20;
@@ -70,9 +65,9 @@ function [Phi0, As, Psis, p, q] = dynareToVarma(M_, oo_, options_, maxKappa)
         % Finding AR, MA matrices
         CInv = inv(C);
         DInv = inv(D);
-        Phi0 = D * S;
+        Phi0 = D;
         As = {C*A*CInv};
-        Psis = {C*(B - A*CInv*D)*SInv*DInv};
+        Psis = {C*(B - A*CInv*D)*DInv};
         return;
     end
 
@@ -122,7 +117,6 @@ function [Phi0, As, Psis, p, q] = dynareToVarma(M_, oo_, options_, maxKappa)
 
     As = cell(1, kappa+1);
     Phi0 = ThetaPlus * FPlus * G{1};
-    Phi0 = Phi0 * S;  % because of how dynare handles shock sizes
     A0 = inv(Phi0);  
     for k=1:kappa
         colStart = (k-1)*n + 1;
@@ -135,7 +129,7 @@ function [Phi0, As, Psis, p, q] = dynareToVarma(M_, oo_, options_, maxKappa)
 
     Psis = cell(1, kappa+1);
     for k=1:kappa 
-        Psis{k} = ThetaPlus * (FPlus * G{k+1} - A * FPlus * G{k}) * S * A0;
+        Psis{k} = ThetaPlus * (FPlus * G{k+1} - A * FPlus * G{k}) * A0;
     end
-    Psis{end} = ThetaPlus * (B - A * FPlus * G{kappa+1}) * S * A0;
+    Psis{end} = ThetaPlus * (B - A * FPlus * G{kappa+1}) * A0;
 end
