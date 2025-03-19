@@ -41,9 +41,9 @@ function [A, B, C, D]=getABCD(M_, oo_, options_)
     obs_var=oo_.dr.inv_order_var(options_.varobs_id);
 
     % get state transition matrices
-    [A,B] = kalman_transition_matrix(oo_.dr,ipred,1:M_.nspred,M_.exo_nbr);
+    [A,B] = kalman_transition_matrix(oo_.dr,ipred,1:M_.nspred);
     % get observation equation matrices
-    [C,D] = kalman_transition_matrix(oo_.dr,obs_var,1:M_.nspred,M_.exo_nbr);
+    [C,D] = kalman_transition_matrix(oo_.dr,obs_var,1:M_.nspred);
 
     % We need the minimum state representation
     if user_has_matlab_license('control_toolbox')
