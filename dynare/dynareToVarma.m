@@ -35,6 +35,9 @@ function [Phi0, As, Psis, p, q] = dynareToVarma(M_, oo_, options_, maxKappa)
     %
     %   See also `getABCD`, `varmaIrfs`.
 
+    % Checking if Dynare is setup
+    checkDynare();
+
     if ~isfield(options_, "varobs")
         error("dynareToVarma: No observed variables were defined in the mod file.")
     end
