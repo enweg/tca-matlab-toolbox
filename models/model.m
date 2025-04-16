@@ -1,4 +1,4 @@
-classdef (Abstract) Model
+classdef (Abstract) Model < handle
     methods (Abstract)
         isFitted(obj);
         coeffs(obj);
@@ -15,8 +15,8 @@ classdef (Abstract) Model
 
     methods
         function requireFitted(obj)
-            if !isFitted(obj)
-                error(class(obj) + "must first be estimated.")
+            if ~isFitted(obj)
+                error(class(obj) + " must first be estimated.")
             end
         end
     end
