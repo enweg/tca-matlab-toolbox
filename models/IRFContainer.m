@@ -1,4 +1,4 @@
-classdef IRF
+classdef IRFContainer
     properties
        irfs
        varnames
@@ -7,9 +7,15 @@ classdef IRF
     end
 
     methods
-        function obj = IRF(irfs, varnames, model, identificationMethod)
+        function obj = IRFContainer(irfs, varnames, model, identificationMethod)
+            if ~isa(model, 'Model')
+                error("The provided model is not a Model.");
+            end
             if nargin == 3
                 identificationMethod = missing;
+            end
+            if ~isa(identificationMethod, 'AbstractIdentificationMethod') && ~ismissing(identificationMethod)
+                error("The provided identification method is not a valid.")
             end
         
             obj.irfs = irfs; 
