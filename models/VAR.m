@@ -86,13 +86,13 @@ classdef VAR < handle & Model
             Y = Y';
         end
 
-        function irfs = IRF_(B, p, max_horizon)
+        function irfs = IRF_(B, p, maxHorizon)
             % B must exclude coefficients for deterministic components
             k = size(B, 1);
-            irfs = zeros(k, k, max_horizon + 1);
+            irfs = zeros(k, k, maxHorizon + 1);
             irfs(:, :, 1) = eye(k);
 
-            for h = 1:max_horizon
+            for h = 1:maxHorizon
                 for j = 1:min(h, p)
                     Bj = B(:, ((j-1)*k+1):(j*k));
                     irfs(:, :, h+1) = irfs(:, :, h+1) + Bj * irfs(:, :, h+1-j);
@@ -130,14 +130,22 @@ classdef VAR < handle & Model
                 opts.(varargin{i}) = varargin{i+1};
             end
 
+            if istable(data)
+                dataMatrix = table2array(data);
+            else
+                dataMatrix = data;
+                varnames = arrayfun(@(i) "Y" + i, 1:size(data, 2));
+                data = array2table(data, 'VariableNames', varnames);
+            end
+
             U = [];
             Yhat = [];
-            Y = data((p+1):end, :);
-            X = makeLagMatrix(data, p);
+            Y = dataMatrix((p+1):end, :);
+            X = makeLagMatrix(dataMatrix, p);
             X = X((p+1):end, :);
             for i = 1:length(opts.trendExponents)
                 te = opts.trendExponents(i);
-                trend = arrayfun(@(x) x^te, (p+1):size(data, 1))';
+                trend = arrayfun(@(x) x^te, (p+1):size(dataMatrix, 1))';
                 X = [trend X];
             end
 
@@ -296,11 +304,12 @@ classdef VAR < handle & Model
             icTable = table(ps', ics, 'VariableNames', {'p', 'IC'});
         end
 
-        % TODO: should return an IRF object !!!!
-        function irfs = IRF(obj, max_horizon)
+        function irfObj = IRF(obj, maxHorizon)
             requireFitted(obj);
             B = obj.coeffs(true);
-            irfs = VAR.IRF_(B, obj.p, max_horizon);
+            irfs = VAR.IRF_(B, obj.p, maxHorizon);
+            varnames = getVariableNames(obj);
+            irfObj = IRFContainer(irfs, varnames, obj);
         end
 
     end
