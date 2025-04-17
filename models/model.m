@@ -16,7 +16,9 @@ classdef (Abstract) Model < handle
     methods
         function requireFitted(obj)
             if ~isFitted(obj)
-                error(class(obj) + " must first be estimated.")
+                errId = class(obj) + ":NotFitted";
+                errMsg = class(obj) + " has not been estimated.";
+                error(errId, errMsg);
             end
         end
     end
