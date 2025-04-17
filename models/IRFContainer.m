@@ -14,7 +14,7 @@ classdef IRFContainer
             if nargin == 3
                 identificationMethod = missing;
             end
-            if ~isa(identificationMethod, 'AbstractIdentificationMethod') && ~ismissing(identificationMethod)
+            if ~isa(identificationMethod, 'IdentificationMethod') && ~ismissing(identificationMethod)
                 error("The provided identification method is not a valid.")
             end
         

@@ -309,13 +309,25 @@ classdef VAR < handle & Model
             icTable = table(ps', ics, 'VariableNames', {'p', 'IC'});
         end
 
-        function irfObj = IRF(obj, maxHorizon)
-            requireFitted(obj);
-            B = obj.coeffs(true);
-            irfs = VAR.IRF_(B, obj.p, maxHorizon);
-            varnames = getVariableNames(obj);
-            irfObj = IRFContainer(irfs, varnames, obj);
-        end
+        function irfObj = IRF(obj, maxHorizon, varargin)
+            opts.identificationMethod = missing
+            for i = 1:2:length(varargin)
+                if ~isfield(opts, varargin{i})
+                    error("VAR.IRF: " + varargin{i} + " is not a valid option.")
+                end
+                opts.(varargin{i}) = varargin{i+1};
+            end
 
+            requireFitted(obj);
+            if ismissing(opts.identificationMethod)
+                B = obj.coeffs(true);
+                irfs = VAR.IRF_(B, obj.p, maxHorizon);
+            else
+                % This way users can easily implement new identification methods.
+                irfs = opts.identificationMethod.identifyIrfs(obj, maxHorizon);
+            end
+            varnames = getVariableNames(obj);
+            irfObj = IRFContainer(irfs, varnames, obj, opts.identificationMethod);
+        end
     end
 end
