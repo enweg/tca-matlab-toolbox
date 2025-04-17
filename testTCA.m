@@ -4,7 +4,11 @@ function results = testTCA(dynarePath)
     resultsSimplifying = run(simplifyingTest);
     resultsSystemsForm = run(systemsFormTest);
     resultsTransmission = run(transmissionTest);
-    results = [resultsUtils, resultsSimplifying, resultsSystemsForm, resultsTransmission];
+
+    addpath("./models/");
+    resultsVAR = run(modelVARTest);
+    resultsSVAR = run(modelSVARTest);
+    results = [resultsUtils, resultsSimplifying, resultsSystemsForm, resultsTransmission, resultsVAR, resultsSVAR];
     if nargin == 0
         warning("testTCA: Not testing Dynare functions because Dynare path was not provided.");
         return;

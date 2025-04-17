@@ -310,7 +310,7 @@ classdef VAR < handle & Model
         end
 
         function irfObj = IRF(obj, maxHorizon, varargin)
-            opts.identificationMethod = missing
+            opts.identificationMethod = missing;
             for i = 1:2:length(varargin)
                 if ~isfield(opts, varargin{i})
                     error("VAR.IRF: " + varargin{i} + " is not a valid option.")
