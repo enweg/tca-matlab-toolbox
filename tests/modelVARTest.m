@@ -242,3 +242,31 @@ function testVARNumberVariables(testCase)
     model = VAR(Y, p, 'trendExponents', trendExponents);
     model.fit();
 end
+
+function testVARIRF(testCase)
+    k = 3;
+    p = 2;
+    trendExponents = [0];
+    m = length(trendExponents);
+    B = 0.2 * randn(k, k*p + m);
+
+    maxHorizon = 4;
+    C = VAR.makeCompanionMatrix_(B, p, m);
+    irfsCompanion = nan(k, k, maxHorizon + 1);
+    for h = 0:maxHorizon
+        tmp = C^h;
+        irfsCompanion(:, :, h+1) = tmp(1:k, 1:k);
+    end
+
+    % Using exact coefficients
+    irfs = VAR.IRF_(B(:, (m+1):end), p, maxHorizon);
+    testDiff = irfs - irfsCompanion;
+    assert(all(max(abs(testDiff), [], 'all') < sqrt(eps())));
+
+    % THE FOLLOWING IS JUST AN IMPLEMENTATION TEST. VAR.IRF_ IS TESTED ABOVE.
+    T = 10000;
+    Y = VAR.simulate(T, B, 'trendExponents', trendExponents);
+    model = VAR(Y, p, 'trendExponents', trendExponents);
+    model.fit();
+    irfsModel = model.IRF(maxHorizon);
+end

@@ -213,6 +213,11 @@ classdef VAR < handle & Model
             data = obj.inputData;
         end
 
+        function varnames = getVariableNames(obj)
+            data = getInputData(obj);
+            varnames = data.Properties.VariableNames;
+        end
+
         function flag = isStructural(obj)
             flag = false;
         end
