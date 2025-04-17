@@ -63,5 +63,9 @@ classdef IRF
                 error('Division only supported with scalars.');
             end
         end
+
+        function disp(obj)
+            disp(obj.irfs);
+        end
     end
 end
