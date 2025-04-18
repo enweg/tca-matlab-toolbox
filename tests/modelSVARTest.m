@@ -159,4 +159,77 @@ function testSVARIRFRecursive(testCase)
     irfs = model.IRF(10);
 end
 
-% TODO: test InternalInstruments
+function testSVARInternalInstrument(testCase)
+    k = 3; 
+    p = 2;
+    T = 100000;
+    trendExponents = [0];
+    m = length(trendExponents);
+
+    A0 = randn(k, k);
+    % A0 = tril(A0);
+    % S = diag(sign(diag(A0)));
+    % A0 = A0 * S;
+    Phi0 = inv(A0);
+    B = 0.2 * randn(k, k * p + m);
+    APlus = A0 * B;
+    SigmaU = Phi0 * Phi0';
+
+    % introducing instrument into SVAR
+    % first variable is instrument 
+    % first "shock" is measurement error
+    Phi0Tilde = zeros(k + 1, k+1);
+    Phi0Tilde(2:end, 2:end) = Phi0;
+    Phi0Tilde(1, 1:2) = [0.1, 1];
+
+    BTilde = zeros(k+1, (k+1)*p + m);
+    BTilde(2:end, 1:m) = B(:, 1:m);
+    tmp = B(:, (m+1):end);
+    for pp = 1:p
+        Bi = tmp(:, (k*(pp-1)+1):(pp*k));
+        BTilde(2:end, ((k+1)*(pp-1)+2+m):(pp*(k+1)+m)) = Bi;
+    end
+    SigmaUTilde = Phi0Tilde * Phi0Tilde';
+
+    irfsTrue = SVAR.IRF_(A0, APlus(:, (m+1):end), p, 10);
+
+    method = InternalInstrument(2);
+    irfs = method.identifyVARIrfs_(BTilde(:, (m+1):end), SigmaUTilde, p, 10);
+    testDiff = irfs(2:end, 1, :) - irfsTrue(:, 1, :) ./ irfsTrue(1, 1, 1);
+    assert(all(max(abs(testDiff), [], 'all') < sqrt(eps())));
+
+    method = InternalInstrument(2, 'normalisingHorizon', 1);
+    irfs = method.identifyVARIrfs_(BTilde(:, (m+1):end), SigmaUTilde, p, 10);
+    testDiff = irfs(2:end, 1, :) - irfsTrue(:, 1, :) ./ irfsTrue(1, 1, 2);
+    assert(all(max(abs(testDiff), [], 'all') < sqrt(eps())));
+
+    % THE REMAINING TESTS ARE IMPLEMENTATION TESTS. 
+
+    Y = VAR.simulate(T, BTilde, 'SigmaU', SigmaUTilde, 'trendExponents', trendExponents);
+    modelVAR = VAR(Y, p, 'trendExponents', trendExponents);
+    modelVAR.fit();
+
+    method = InternalInstrument(2);
+    irfObj = modelVAR.IRF(10, 'identificationMethod', method);
+    testDiff = irfObj.irfs(2:end, 1, :) - irfsTrue(:, 1, :) ./ irfsTrue(1, 1, 1);
+    max(abs(testDiff), [], 'all');
+
+    method = InternalInstrument('Y2');
+    irfObj = modelVAR.IRF(10, 'identificationMethod', method);
+    testDiff = irfObj.irfs(2:end, 1, :) - irfsTrue(:, 1, :) ./ irfsTrue(1, 1, 1);
+    max(abs(testDiff), [], 'all');
+    
+    method = InternalInstrument('Y2', 'normalisingHorizon', 1);
+    irfObj = modelVAR.IRF(10, 'identificationMethod', method);
+    testDiff = irfObj.irfs(2:end, 1, :) - irfsTrue(:, 1, :) ./ irfsTrue(1, 1, 2);
+    max(abs(testDiff), [], 'all');
+
+    method = InternalInstrument('Y3');
+    irfObj = modelVAR.IRF(10, 'identificationMethod', method);
+    testDiff = irfObj.irfs(2:end, 1, :) - irfsTrue(:, 1, :) ./ irfsTrue(2, 1, 1);
+    max(abs(testDiff), [], 'all');
+
+    method = InternalInstrument('Y3', 'instrument', 2);
+    irfObj = modelVAR.IRF(10, 'identificationMethod', method);
+    irfObj;
+end
