@@ -8,7 +8,8 @@ function results = testTCA(dynarePath)
     addpath("./models/");
     resultsVAR = run(modelVARTest);
     resultsSVAR = run(modelSVARTest);
-    results = [resultsUtils, resultsSimplifying, resultsSystemsForm, resultsTransmission, resultsVAR, resultsSVAR];
+    resultsLP = run(modelLPTest);
+    results = [resultsUtils, resultsSimplifying, resultsSystemsForm, resultsTransmission, resultsVAR, resultsSVAR, resultsLP];
     if nargin == 0
         warning("testTCA: Not testing Dynare functions because Dynare path was not provided.");
         return;

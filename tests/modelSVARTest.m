@@ -1,4 +1,4 @@
-function tests = modelVARTest
+function tests = modelSVARTest
     tests = functiontests(localfunctions);
 end
 

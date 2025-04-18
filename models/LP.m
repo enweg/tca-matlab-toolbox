@@ -106,7 +106,7 @@ classdef LP < handle & Model
         end
 
         function n = nobs(obj)
-            n = size(obj.Y, 1) - obj.p - obj.horizons;
+            n = size(obj.data, 1) - obj.p - obj.horizons;
         end
 
         function Y = getDependent(obj)
