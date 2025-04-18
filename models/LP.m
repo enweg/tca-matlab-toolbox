@@ -6,7 +6,7 @@ classdef LP < handle & Model
         horizons
         includeConstant
 
-        coeffs
+        B
         Y
         X
         U
@@ -15,7 +15,7 @@ classdef LP < handle & Model
 
     methods (Static)
         function [X, Y] = createXY_(data, treatment, p, horizons, varargin)
-            opts.includeConstant = true
+            opts.includeConstant = true;
             for i = 1:2:length(varargin)
                 if ~isfield(opts, varargin{i})
                     error(varargin{i} + " is not a valid option.");
@@ -38,7 +38,7 @@ classdef LP < handle & Model
             dataMatrixLag = makeLagMatrix(dataMatrix, p);
             X = [dataMatrix((p+1):end, 1:idxTreatment) dataMatrixLag((p+1):end, :)];
             if opts.includeConstant
-                X = [ones(T-p, 1), X]
+                X = [ones(T-p, 1) X];
             end
 
             maxHorizon = max(horizons);
@@ -46,7 +46,7 @@ classdef LP < handle & Model
             Y = [dataMatrix Y];
             Y = Y((p+1):end, :);
             Y = reshape(Y, T-p, k, []);
-            Y = Y(:, :, horizons + 1)
+            Y = Y(:, :, horizons + 1);
         end
     end
 
@@ -60,7 +60,7 @@ classdef LP < handle & Model
                 opts.(varargin{i}) = varargin{i+1};
             end
 
-            [Y, X] = LP.createXY_(data, treatment, p, horizons, opts.includeContant);
+            [X, Y] = LP.createXY_(data, treatment, p, horizons, 'includeConstant', opts.includeConstant);
 
             if ~istable(data)
                 data = array2table(data, 'VariableNames', arrayfun(@(i) "Y" + i, 1:size(data, 2)));
@@ -70,7 +70,7 @@ classdef LP < handle & Model
             obj.p = p;
             obj.horizons = horizons; 
             obj.includeConstant = opts.includeConstant;
-            obj.coeffs = [];
+            obj.B = [];
             obj.Y = Y;
             obj.X = X;
             obj.U = [];
@@ -78,7 +78,7 @@ classdef LP < handle & Model
         end
 
         function flag = isFitted(obj)
-            flag = size(obj.Yhat) > 0
+            flag = size(obj.Yhat, 1) > 0;
         end
 
         function B = coeffs(obj, excludeDeterministic)
@@ -88,11 +88,11 @@ classdef LP < handle & Model
             end
 
             if ~excludeDeterministic
-                B = obj.coeffs;
+                B = obj.B;
                 return;
             end
 
-            B = obj.coeffs(:, (obj.includeConstant+1):end, :)
+            B = obj.B(:, (obj.includeConstant+1):end, :)
         end
 
         function Yhat = fitted(obj)
@@ -130,7 +130,73 @@ classdef LP < handle & Model
             flag = true;
         end
 
-        % TODO: implement fit, fitAndSelect, IRF
+        function fit(obj, identificationMethod)
+            if nargin < 2
+                identificationMethod = Recursive();
+            end
+            B = identificationMethod.identify(obj);
+            
+            Yhat = nan(size(obj.Y));
+            U = nan(size(obj.Y));
 
+            for i = 1:length(obj.horizons)
+                Yhat(:, :, i) = obj.X * B(:, :, i)'; 
+                U(:, :, i) = obj.Y(:, :, i) - Yhat(:, :, i);
+            end
+
+            obj.B = B;
+            obj.Yhat = Yhat; 
+            obj.U = U;
+        end
+
+        function [modelBest, icTable] = fitAndSelect(obj, identificationMethod, icFunction)
+            if nargin == 1
+                identificationMethod = Recursive();
+            end
+            if nargin < 3
+                icFunction = @VAR.aic_;
+            end
+
+            % best model will be selected by finding the best VAR alternative
+            data = obj.getInputData();
+            if obj.includeConstant
+                trendExponents = [0];
+            else
+                trendExponents = [];
+            end
+            modelVAR = VAR(data, obj.p, 'trendExponents', trendExponents);
+            [modelVARBest, icTable] = modelVAR.fitAndSelect(icFunction);
+
+            modelBest = LP(data, obj.treatment, modelVARBest.p, obj.horizons, 'includeConstant', obj.includeConstant);
+            modelBest.fit(identificationMethod);
+        end
+
+        function irfObj = IRF(obj, maxHorizon, varargin)
+            opts.identificationMethod = missing; 
+            for i = 1:2:length(varargin)
+                if ~isfield(opts, varargin{i})
+                    error(varargin{i} + " is not a valid option.");
+                end
+                opts.(varargin{i}) = varargin{i+1};
+            end
+
+            if ~isequal(obj.horizons, 0:maxHorizon)
+                error("IRF horizons differ from LP horizons.");
+            end
+
+            if ~ismissing(opts.identificationMethod)
+                obj.fit(opts.identificationMethod);
+                irfObj = obj.IRF(maxHorizon);
+                return;
+            end
+
+            requireFitted(obj);
+            irfs = obj.coeffs(true)
+            data = obj.getInputData();
+            idxTreatment = findVariableIndex(data, obj.treatment);
+            irfs = irfs(:, idxTreatment, :);
+            varnames = data.Properties.VariableNames;
+            irfObj = IRFContainer(irfs, varnames, obj, opts.identificationMethod);
+        end
     end
 end

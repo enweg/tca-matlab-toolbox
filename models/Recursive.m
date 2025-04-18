@@ -16,6 +16,21 @@ classdef Recursive < IdentificationMethod
             end
         end
 
+        function coeffs = identifyLP_(X, Y, horizons)
+            k = size(Y, 2);
+            numCoeffs = size(X, 2);
+            numHorizons = length(horizons);
+
+            coeffs = nan(k, numCoeffs, numHorizons);
+            for i = 1:numHorizons
+                h = horizons(i);
+                XTmp = X(1:(end-h), :);
+                YTmp = Y(1:(end-h), :, i);
+
+                coeffs(:, :, i) = (YTmp' * XTmp) / (XTmp' * XTmp);
+            end
+        end
+
     end
 
     methods
@@ -35,12 +50,16 @@ classdef Recursive < IdentificationMethod
         function varargout = identify(obj, model)
             switch class(model)
                 case 'VAR'
-                    % Something
                     B = model.coeffs();
                     SigmaU = model.SigmaU;
                     [A0, APlus] = Recursive.identifyVAR_(B, SigmaU);
                     varargout{1} = A0;
                     varargout{2} = APlus;
+                case 'LP'
+                    X = model.X;
+                    Y = model.Y; 
+                    horizons = model.horizons; 
+                    varargout{1} = Recursive.identifyLP_(X, Y, horizons);
                 otherwise
                     error("Recursive identification of " + class(model) + " is not implemented.");
             end
