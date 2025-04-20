@@ -125,4 +125,85 @@ function testLPInformationCriteria(testCase)
     assert(modelBest.p == p);
 end
 
-% TODO: implement the remaining test
+function testLPExternalInstrument(testCase)
+    rng(6150533);
+    k = 3;
+    p = 2;
+    T = 1000000;
+    trendExponents = [0];
+    m = length(trendExponents);
+
+    A0 = tril(0.1 * randn(k, k));
+    S = diag(sign(diag(A0)));
+    A0 = A0 * S;
+    B = 0.4 * randn(k, k*p + m);
+    APlus = A0 * B;
+
+    shocks = randn(k, T);
+    Y = SVAR.simulate(shocks, A0, APlus, 'trendExponents', trendExponents);
+    data = [shocks(1, :)' Y];
+    data = array2table(data, 'VariableNames', {'instrument', 'Y1', 'Y2', 'Y3'});
+
+    maxHorizon = 4;
+    irfsTrue = SVAR.IRF_(A0, APlus(:, (m+1):end), p, maxHorizon);
+    irfsTrue = irfsTrue(:, 1, :) ./ irfsTrue(1, 1, 1);
+
+    % Defining treatment and instrument by number
+    treatment = 2;
+    model = LP(data, treatment, p, 0:maxHorizon);
+    method = ExternalInstrument(2, 1);
+    model.fit(method);
+    irfObj = model.IRF(maxHorizon);
+    irfsLP = irfObj.irfs(2:end, :, :);
+
+    testDiff = irfsLP - irfsTrue;
+    assert(all(max(abs(testDiff), [], 'all') < 1e-2));
+
+    % Defining treatment and instrument by name
+    treatment = 'Y1';
+    model = LP(data, treatment, p, 0:maxHorizon);
+    method = ExternalInstrument(treatment, {'instrument'});
+    model.fit(method);
+    irfObj = model.IRF(maxHorizon);
+    irfsLPName = irfObj.irfs(2:end, :, :);
+
+    testDiff = irfsLPName - irfsLP;
+    assert(all(max(abs(testDiff), [], 'all') < sqrt(eps())));
+
+    testDiff = irfsLPName - irfsTrue;
+    assert(all(max(abs(testDiff), [], 'all') < 1e-2));
+
+    % creating multiple instruments
+    data.instrument2 = data.instrument + 0.1 * randn(T, 1);
+    data.instrument3 = data.instrument + 0.1 * randn(T, 1);
+    data = data(:, {'instrument', 'instrument2', 'instrument3', 'Y1', 'Y2', 'Y3'});
+
+    treatment = 'Y1';
+    model = LP(data, treatment, p, 0:maxHorizon);
+    method = ExternalInstrument(treatment, {'instrument', 'instrument2', 'instrument3'});
+    model.fit(method);
+    irfObj = model.IRF(maxHorizon);
+    irfsLPName = irfObj.irfs(4:end, :, :);
+
+    testDiff = irfsLPName - irfsTrue;
+    assert(all(max(abs(testDiff), [], 'all') < 1e-2));
+
+    % Changing the normalising horizon
+    treatment = 'Y2'; 
+    % Changing shock because effect of shock1 on Y1 close to zero for h=1
+    data.instrument = shocks(2, :)';
+    data.instrument2 = data.instrument + 0.1 * randn(T, 1);
+    data.instrument3 = data.instrument + 0.1 * randn(T, 1);
+    model = LP(data, treatment, p, 0:maxHorizon);
+    method = ExternalInstrument(treatment, {'instrument', 'instrument2', 'instrument3'}, 'normalisingHorizon', 1);
+    model.fit(method);
+    irfObj = model.IRF(maxHorizon);
+    irfsLPName = irfObj.irfs(4:end, :, :);
+    % Need to adjust the true IRFs too
+    irfsTrue = SVAR.IRF_(A0, APlus(:, (m+1):end), p, maxHorizon);
+    irfsTrue = irfsTrue(:, 2, :) ./ irfsTrue(2, 2, 2);
+
+    testDiff = irfsLPName - irfsTrue;
+    assert(all(max(abs(testDiff), [], 'all') < 1e-2));
+end
+
