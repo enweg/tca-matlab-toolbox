@@ -92,7 +92,7 @@ classdef LP < handle & Model
                 return;
             end
 
-            B = obj.B(:, (obj.includeConstant+1):end, :)
+            B = obj.B(:, (obj.includeConstant+1):end, :);
         end
 
         function Yhat = fitted(obj)
@@ -191,7 +191,7 @@ classdef LP < handle & Model
             end
 
             requireFitted(obj);
-            irfs = obj.coeffs(true)
+            irfs = obj.coeffs(true);
             data = obj.getInputData();
             idxTreatment = findVariableIndex(data, obj.treatment);
             irfs = irfs(:, idxTreatment, :);

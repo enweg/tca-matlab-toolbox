@@ -64,4 +64,65 @@ function testLPBasicFunctions(testCase)
     model.residuals();
 end
 
+function testLPRecursive(testCase)
+    rng(6150533);
+    k = 3;
+    p = 2;
+    T = 1000000;
+    trendExponents = [0];
+    m = length(trendExponents);
+
+    A0 = tril(randn(k, k));
+    S = diag(sign(diag(A0)));
+    A0 = A0 * S;
+    B = 0.2 * randn(k, k*p + m);
+    APlus = A0 * B;
+
+    maxHorizon = 4;
+    Y = SVAR.simulate(T, A0, APlus, 'trendExponents', trendExponents);
+    irfsTrue = SVAR.IRF_(A0, APlus(:, (m+1):end), p, maxHorizon);
+
+    for treatment = 1:k
+        model = LP(Y, treatment, p+10, 0:maxHorizon, 'includeConstant', true);
+        method = Recursive();
+        model.fit(method);
+
+        irfObj = model.IRF(maxHorizon);
+        irfsLP = irfObj.irfs(:, 1, :);
+
+        testDiff = irfsLP - irfsTrue(:, treatment, :) ./ irfsTrue(treatment, treatment, 1);
+        assert(all(max(abs(testDiff), [], 'all') < 1e-2));
+    end
+end
+
+function testLPInformationCriteria(testCase)
+    rng(6150533);
+    k = 3;
+    p = 2;
+    T = 10000;
+    trendExponents = [0];
+    m = length(trendExponents);
+
+    A0 = tril(randn(k, k));
+    S = diag(sign(diag(A0)));
+    A0 = A0 * S;
+    B = 0.2 * randn(k, k*p + m);
+    APlus = A0 * B;
+
+    Y = SVAR.simulate(T, A0, APlus, 'trendExponents', trendExponents);
+
+    modelLarge = LP(Y, 1, p+10, 0:4);
+    method = Recursive();
+    [modelBest, icTable] = modelLarge.fitAndSelect(method);
+    assert(modelBest.p == p);
+    [modelBest, icTable] = modelLarge.fitAndSelect(method, @VAR.aic_);
+    assert(modelBest.p == p);
+    [modelBest, icTable] = modelLarge.fitAndSelect(method, @VAR.bic_);
+    assert(modelBest.p == p);
+    [modelBest, icTable] = modelLarge.fitAndSelect(method, @VAR.sic_);
+    assert(modelBest.p == p);
+    [modelBest, icTable] = modelLarge.fitAndSelect(method, @VAR.hqc_);
+    assert(modelBest.p == p);
+end
+
 % TODO: implement the remaining test
