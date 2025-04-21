@@ -417,5 +417,28 @@ classdef DSGE < handle & Model
             varnames = obj.getVariableNames();
             irfObj = IRFContainer(irfs, varnames, obj);
         end
+
+        % TODO: test
+        function effects = transmission(obj, shock, condition, order, maxHorizon)
+            if ~ischar(shock) && ~isnumeric(shock)
+                error("The shock must either be given as integer or using the shock's name.");
+            end
+            if ~isa(condition, 'Q')
+                error("The provided transmission condition is not valid.")
+            end
+            
+            shockIdx = shock; 
+            if ischar(shock)
+                shockNames = obj.getShockNames();
+                shockIdx = find(cellfun(@(c) isequal(c, shock), shockNames), 1, 'first');
+            end
+
+            orderIdx = obj.vars2idx_(order);
+            shockSize = obj.getShockSize(shock);
+            [Phi0, As, Psis, p, q] = DSGE.dynareToVarma_(obj.M_, obj.oo_, obj.options_);
+            [B, Omega] = makeSystemsForm(Phi0, As, Psis, orderIdx, maxHorizon);
+            effects = transmission(shockIdx, B, Omega, condition, "BOmega", orderIdx) * shockSize;
+        end
+
     end
 end

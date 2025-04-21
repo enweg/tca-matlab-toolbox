@@ -1,4 +1,4 @@
-classdef SVAR < handle & Model
+classdef SVAR < handle & Model 
     properties
         A0
         APlus
@@ -186,6 +186,39 @@ classdef SVAR < handle & Model
 
             varnames = getVariableNames(obj);
             irfObj = IRFContainer(irfs, varnames, obj);
+        end
+
+        % TODO: test
+        function effects = transmission(obj, shock, condition, order, maxHorizon, varargin)
+            opts.identificationMethod = missing
+            for i = 1:2:length(varargin)
+                if ~isfield(opts, varargin{i})
+                    error(varargin{i} + " is not a valid option.");
+                end
+                opts.(varargin{i}) = varargin{i+1};
+            end
+            if ~ismissing(opts.identificationMethod)
+                obj.fit(opts.identificationMethod);
+            end
+
+            requireFitted(obj);
+            if ~isnumeric(shock)
+                error("Shock must be provided as integer for SVAR models.")
+            end
+            if ~isa(condition, 'Q')
+                error("The provided transmission condition is not valid.")
+            end
+
+            shockIdx = shock;
+            orderIdx = obj.vars2idx_(order);
+
+            B = obj.VARModel.coeffs(true);
+            Bs = VAR.coeffsToCellArray_(B);
+            Phi0 = inv(obj.A0);
+            Psis = cell(0, 0);
+            [B, Omega] = makeSystemsForm(Phi0, Bs, Psis, orderIdx, maxHorizon);
+
+            effects = transmission(shockIdx, B, Omega, condition, "BOmega", orderIdx); 
         end
 
     end

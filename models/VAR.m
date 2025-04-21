@@ -32,6 +32,17 @@ classdef VAR < handle & Model
             val = VAR.sic_(SigmaU, nCoeffs, T);
         end
 
+        % TODO: test
+        function BCellArray = coeffsToCellArray_(B)
+            % B excludes coeffs on deterministic components
+            [k, kp] = size(B);
+            p = kp / k;
+            BCellArray = cell(1, p);
+            for i = 1:p
+                BCellArray{i} = B(:, ((i-1)*k + 1):(i*k));
+            end
+        end
+
         function Y = simulate(errorsOrT, B, varargin)
 
             % Default values
@@ -328,6 +339,22 @@ classdef VAR < handle & Model
             end
             varnames = getVariableNames(obj);
             irfObj = IRFContainer(irfs, varnames, obj, opts.identificationMethod);
+        end
+
+        % TODO: test
+        function effects = transmission(obj, shock, condition, order, maxHorizon, varargin)
+            opts.identificationMethod = missing
+            for i = 1:2:length(varargin)
+                if ~isfield(opts, varargin{i})
+                    error(varargin{i} + " is not a valid option.");
+                end
+                opts.(varargin{i}) = varargin{i+1};
+            end
+            if ismissing(opts.identificationMethod)
+                error("To compute transmission effects from a VAR an identificationMethod must be provided.")
+            end
+
+            effects = opts.identificationMethod.identifyTransmission(obj, shock, condition, order, maxHorizon)
         end
     end
 end

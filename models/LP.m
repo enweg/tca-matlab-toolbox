@@ -198,5 +198,47 @@ classdef LP < handle & Model
             varnames = data.Properties.VariableNames;
             irfObj = IRFContainer(irfs, varnames, obj, opts.identificationMethod);
         end
+
+        % TODO: test
+        function effects = transmission(obj, shock, condition, order, maxHorizon, varargin)
+
+            opts.identificationMethod = missing
+            for i = 1:2:length(varargin)
+                if ~isfield(opts, varargin{i})
+                    error(varargin{i} + " is not a valid option.");
+                end
+                opts.(varargin{i}) = varargin{i+1};
+            end
+            if ~ismissing(opts.identificationMethod)
+                obj.fit(opts.identificationMethod);
+            end
+
+            requireFitted(obj);
+            if ~isnumeric(shock)
+                error("Shock must be provided as integer for LP models.")
+            end
+            if ~isa(condition, 'Q')
+                error("The provided transmission condition is not valid.")
+            end
+
+            shockIdx = shock;
+            orderIdx = obj.vars2idx_(order);
+            irfsStructural = obj.IRF(maxHorizon).irfs;
+            irfsStructural = irfsStructural(orderIdx, :, :);
+
+            data = obj.getInputData();
+            k = size(irfsStructural, 1)
+            irfsOrthogonal = nan(k, k, maxHorizon + 1)
+            for treatment = 1:k
+                modelTmp = LP(data(:, orderIdx), treatment, obj.p, 0:maxHorizon, 'includeConstant', obj.includeConstant);
+                modelTmp.fit(Recursive());
+                irfsTmp = modelTmp.IRF(maxHorizon).irfs;
+                irfsOrthogonal(:, treatment, :) = irfsTmp;
+            end
+
+            irfsStructural = toTransmissionIrfs(irfsStructural);
+            irfsOrthogonal = toTransmissionIrfs(irfsOrthogonal);
+            effects = transmission(shockIdx, irfsStructural, irfsOrthogonal, condition, "irf", orderIdx); 
+        end
     end
 end

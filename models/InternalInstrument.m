@@ -37,6 +37,23 @@ classdef InternalInstrument < IdentificationMethod
             irfs = irfsCholesky;
         end
 
+        % TODO: test
+        function effects = identifyVARTransmission_(obj, B, SigmaU, p, data, trendExponents, shock, condition, order, maxHorizon)
+
+            irfsStructural = obj.identifyVARIrfs_(B, SigmaU, p, maxHorizon);
+            irfsStructural = irfsStructural(order, :, :);
+            % Getting orthogonal IRFs using a temporary model. This is 
+            % not the most efficient, but the most robust. 
+            modelTmp = VAR(data(:, order), p, 'trendExponents', trendExponents);
+            modelTmp.fit(Recursive());
+            irfsOrthogonal = modelTmp.IRF(maxHorizon).irfs();
+
+            irfsStructural = toTransmissionIrfs(irfsStructural);
+            irfsOrthogonal = toTransmissionIrfs(irfsOrthogonal);
+
+            effects = transmission(shock, irfsStructural, irfsOrthogonal, condition, "irf", order);
+        end
+
         function irfs = identifyIrfs(obj, model, maxHorizon)
 
             if ~isnumeric(obj.instrument)
@@ -67,6 +84,30 @@ classdef InternalInstrument < IdentificationMethod
                     error("InternalInstruments can only be used to identify IRFs of SVARs but not the entire SVAR.");
                 otherwise
                     error("InternalInstrument identification of " + class(model) + " is not implemented.");
+            end
+        end
+
+        % TODO: test
+        function effects = identifyTransmission(obj, model, shock, condition, order, maxHorizon)
+            if ~isnumeric(shock)
+                error("Shock must be provided as integer.");
+            end
+            if ~isa(condition, 'Q')
+                error("Invalid transmission condition.");
+            end
+            shockIdx = shock; 
+            orderIdx = model.vars2idx_(order);
+
+            switch class(model)
+                case 'VAR'
+                    B = model.coeffs(true);
+                    SigmaU = model.SigmaU;
+                    p = model.p;
+                    data = model.getInputData();
+                    trendExponents = model.trendExponents;
+                    effects = obj.identifyVARTransmission_(B, SigmaU, p, data, trendExponents, shockIdx, condition, orderIdx, maxHorizon);
+                otherwise
+                    error(class(model) + " not supported.")
             end
         end
     end

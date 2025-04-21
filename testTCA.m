@@ -16,7 +16,7 @@ function results = testTCA(dynarePath)
         warning("testTCA: Not testing Dynare functions because Dynare path was not provided.");
         return;
     end
-
+    addpath(dynarePath)
     resultsDSGE = run(modelDSGETest);
     results = [results, resultsDSGE];
 end
