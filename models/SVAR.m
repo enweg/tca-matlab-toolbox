@@ -188,9 +188,8 @@ classdef SVAR < handle & Model
             irfObj = IRFContainer(irfs, varnames, obj);
         end
 
-        % TODO: test
         function effects = transmission(obj, shock, condition, order, maxHorizon, varargin)
-            opts.identificationMethod = missing
+            opts.identificationMethod = missing;
             for i = 1:2:length(varargin)
                 if ~isfield(opts, varargin{i})
                     error(varargin{i} + " is not a valid option.");

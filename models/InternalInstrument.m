@@ -37,14 +37,13 @@ classdef InternalInstrument < IdentificationMethod
             irfs = irfsCholesky;
         end
 
-        % TODO: test
         function effects = identifyVARTransmission_(obj, B, SigmaU, p, data, trendExponents, shock, condition, order, maxHorizon)
 
             irfsStructural = obj.identifyVARIrfs_(B, SigmaU, p, maxHorizon);
             irfsStructural = irfsStructural(order, :, :);
             % Getting orthogonal IRFs using a temporary model. This is 
             % not the most efficient, but the most robust. 
-            modelTmp = VAR(data(:, order), p, 'trendExponents', trendExponents);
+            modelTmp = SVAR(data(:, order), p, 'trendExponents', trendExponents);
             modelTmp.fit(Recursive());
             irfsOrthogonal = modelTmp.IRF(maxHorizon).irfs();
 
@@ -87,7 +86,6 @@ classdef InternalInstrument < IdentificationMethod
             end
         end
 
-        % TODO: test
         function effects = identifyTransmission(obj, model, shock, condition, order, maxHorizon)
             if ~isnumeric(shock)
                 error("Shock must be provided as integer.");
@@ -97,6 +95,17 @@ classdef InternalInstrument < IdentificationMethod
             end
             shockIdx = shock; 
             orderIdx = model.vars2idx_(order);
+
+            if ~isnumeric(obj.instrument)
+                varnames = model.getVariableNames();
+                idxInstrument = find(cellfun(@(c) isequal(c, obj.instrument), varnames), 1, 'first');  
+                obj = InternalInstrument(obj.normalisingVariable, 'instrument', idxInstrument, 'normalisingHorizon', obj.normalisingHorizon);
+            end
+            if ~isnumeric(obj.normalisingVariable)
+                varnames = model.getVariableNames();
+                idxNormalisingVariable = find(cellfun(@(c) isequal(c, obj.normalisingVariable), varnames), 1, 'first');
+                obj = InternalInstrument(idxNormalisingVariable, 'instrument', obj.instrument, 'normalisingHorizon', obj.normalisingHorizon);
+            end
 
             switch class(model)
                 case 'VAR'

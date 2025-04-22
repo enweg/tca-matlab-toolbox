@@ -16,7 +16,6 @@ classdef Recursive < IdentificationMethod
             end
         end
 
-        % TODO: test
         function effects = identifyVARTransmission_(B, SigmaU, shock, condition, order, maxHorizon)
             [A0, Aplus] = Recursive.identifyVAR_(B, SigmaU);
             Phi0 = inv(A0);

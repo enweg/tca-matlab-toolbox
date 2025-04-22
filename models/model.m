@@ -50,7 +50,6 @@ classdef (Abstract) Model < handle
             end
         end
 
-        % TODO: test all three functions below
         function q = notThrough(obj, vars, horizons, order)
             varsIdx = obj.vars2idx_(vars);
             orderIdx = obj.vars2idx_(order);
@@ -65,8 +64,6 @@ classdef (Abstract) Model < handle
             % This is just a more user friendly name.
             orderIdx = obj.vars2idx_(order);
         end
-        % TODO: how can we handle `transmission`? Do we need to code it for all
-        % models separately? 
         
     end
 end

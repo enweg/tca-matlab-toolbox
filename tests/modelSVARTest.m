@@ -233,3 +233,71 @@ function testSVARInternalInstrument(testCase)
     irfObj = modelVAR.IRF(10, 'identificationMethod', method);
     irfObj;
 end
+
+function testSVARTransmission(testCase)
+    % THESE TESTS ARE ONLY IMPELEMENTATION TESTS. ALL RELEVANT TRANSMISSION 
+    % FUNCTIONS ARE TESTED ELSEWHERE. 
+
+    rng(6150533);
+    k = 4;
+    p = 2;
+    T = 1000; 
+    trendExponents = [0];
+    m = length(trendExponents);
+
+    A0 = randn(k, k);
+    A0 = tril(A0);
+    S = diag(sign(diag(A0)));
+    A0 = A0 * S;
+    Phi0 = inv(A0);
+    B = 0.2 * randn(k, k * p + m);
+    APlus = A0 * B;
+    SigmaU = Phi0 * Phi0';
+
+    Y = SVAR.simulate(T, A0, APlus, 'trendExponents', trendExponents);
+    model = SVAR(Y, p, 'trendExponents', trendExponents);
+    method = Recursive();
+    model.fit(method);
+
+    % Defining a transmission channel
+    order = 1:k;
+    q = model.notThrough('Y1', 0:1, order);
+    q = model.through('Y1', 0:1, order);
+    q = model.notThrough({'Y1', 'Y2'}, 0:2, order);
+    q = model.notThrough({'Y1', 'Y2'}, {0:2, 1}, order);
+    q = model.through({'Y1', 'Y2'}, 0:2, order);
+    q = model.notThrough([1, 2], 0:2, order);
+    q = model.through([1, 2], 0:2, order);
+    order = {'Y2', 'Y1', 'Y3', 'Y4'};
+    q = model.notThrough('Y1', 0:1, order);
+    q = model.through('Y1', 0:1, order);
+    q = model.notThrough({'Y1', 'Y2'}, 0:2, order);
+    q = model.through({'Y1', 'Y2'}, 0:2, order);
+    q = model.through({'Y1', 'Y2'}, {0:2, 0:1}, order);
+    q = model.notThrough([1, 2], 0:2, order);
+    q = model.through([1, 2], 0:2, order);
+
+    % Computing transmission effects from SVAR using Recursive
+    order = {'Y2', 'Y1', 'Y3', 'Y4'};
+    q = model.notThrough('Y1', 0:1, order);
+    maxHorizon = 4;
+    shock = 1;
+    effects = model.transmission(shock, q, order, maxHorizon);
+    model = SVAR(Y, p, 'trendExponents', trendExponents);
+    method = Recursive();
+    effects = model.transmission(shock, q, order, maxHorizon, 'identificationMethod', method);
+
+    % Computing transmission effects from VAR using Recursive
+    model = VAR(Y, p, 'trendExponents', trendExponents);
+    model.fit();
+    order = {'Y2', 'Y1', 'Y3', 'Y4'};
+    q = model.notThrough('Y1', 0:1, order);
+    maxHorizon = 4;
+    shock = 1;
+    method = Recursive();
+    effects = model.transmission(shock, q, order, maxHorizon, 'identificationMethod', method);
+
+    shock = 2;
+    method = InternalInstrument('Y3', 'instrument', 'Y2');
+    effects = model.transmission(shock, q, order, maxHorizon, 'identificationMethod', method);
+end

@@ -191,10 +191,13 @@ classdef LP < handle & Model
             end
 
             requireFitted(obj);
-            irfs = obj.coeffs(true);
             data = obj.getInputData();
+            k = size(data, 2);
             idxTreatment = findVariableIndex(data, obj.treatment);
-            irfs = irfs(:, idxTreatment, :);
+
+            irfs = nan(k, k, maxHorizon + 1);
+            B = obj.coeffs(true);
+            irfs(:, idxTreatment, :) = B(:, idxTreatment, :);
             varnames = data.Properties.VariableNames;
             irfObj = IRFContainer(irfs, varnames, obj, opts.identificationMethod);
         end
@@ -202,7 +205,7 @@ classdef LP < handle & Model
         % TODO: test
         function effects = transmission(obj, shock, condition, order, maxHorizon, varargin)
 
-            opts.identificationMethod = missing
+            opts.identificationMethod = missing;
             for i = 1:2:length(varargin)
                 if ~isfield(opts, varargin{i})
                     error(varargin{i} + " is not a valid option.");
@@ -215,10 +218,10 @@ classdef LP < handle & Model
 
             requireFitted(obj);
             if ~isnumeric(shock)
-                error("Shock must be provided as integer for LP models.")
+                error("Shock must be provided as integer for LP models.");
             end
             if ~isa(condition, 'Q')
-                error("The provided transmission condition is not valid.")
+                error("The provided transmission condition is not valid.");
             end
 
             shockIdx = shock;
@@ -227,13 +230,13 @@ classdef LP < handle & Model
             irfsStructural = irfsStructural(orderIdx, :, :);
 
             data = obj.getInputData();
-            k = size(irfsStructural, 1)
-            irfsOrthogonal = nan(k, k, maxHorizon + 1)
+            k = size(irfsStructural, 1);
+            irfsOrthogonal = nan(k, k, maxHorizon + 1);
             for treatment = 1:k
                 modelTmp = LP(data(:, orderIdx), treatment, obj.p, 0:maxHorizon, 'includeConstant', obj.includeConstant);
                 modelTmp.fit(Recursive());
                 irfsTmp = modelTmp.IRF(maxHorizon).irfs;
-                irfsOrthogonal(:, treatment, :) = irfsTmp;
+                irfsOrthogonal(:, treatment, :) = irfsTmp(:, treatment, :);
             end
 
             irfsStructural = toTransmissionIrfs(irfsStructural);

@@ -83,5 +83,9 @@ classdef ExternalInstrument < IdentificationMethod
 
             varargout{1} = coeffs;
         end
+
+        % FIX: implement this function
+        function effects = identifyTransmission()
+        end
     end
 end

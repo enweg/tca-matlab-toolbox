@@ -88,7 +88,7 @@ function testLPRecursive(testCase)
         model.fit(method);
 
         irfObj = model.IRF(maxHorizon);
-        irfsLP = irfObj.irfs(:, 1, :);
+        irfsLP = irfObj.irfs(:, treatment, :);
 
         testDiff = irfsLP - irfsTrue(:, treatment, :) ./ irfsTrue(treatment, treatment, 1);
         assert(all(max(abs(testDiff), [], 'all') < 1e-2));
@@ -207,3 +207,77 @@ function testLPExternalInstrument(testCase)
     assert(all(max(abs(testDiff), [], 'all') < 1e-2));
 end
 
+function testSVARTransmission(testCase)
+    % THESE TESTS ARE ONLY IMPELEMENTATION TESTS. ALL RELEVANT TRANSMISSION 
+    % FUNCTIONS ARE TESTED ELSEWHERE. 
+
+    rng(6150533);
+    k = 4;
+    p = 2;
+    T = 1000; 
+    trendExponents = [0];
+    m = length(trendExponents);
+
+    A0 = randn(k, k);
+    A0 = tril(A0);
+    S = diag(sign(diag(A0)));
+    A0 = A0 * S;
+    Phi0 = inv(A0);
+    B = 0.2 * randn(k, k * p + m);
+    APlus = A0 * B;
+    SigmaU = Phi0 * Phi0';
+
+    Y = SVAR.simulate(T, A0, APlus, 'trendExponents', trendExponents);
+
+    treatment = 1;
+    maxHorizon = 4;
+    horizons = 0:maxHorizon;
+    model = LP(Y, treatment, p, horizons, 'includeConstant', true);
+    method = Recursive();
+    model.fit(method);
+
+    % Defining a transmission channel
+    order = 1:k;
+    q = model.notThrough('Y1', 0:1, order);
+    q = model.through('Y1', 0:1, order);
+    q = model.notThrough({'Y1', 'Y2'}, 0:2, order);
+    q = model.notThrough({'Y1', 'Y2'}, {0:2, 1}, order);
+    q = model.through({'Y1', 'Y2'}, 0:2, order);
+    q = model.notThrough([1, 2], 0:2, order);
+    q = model.through([1, 2], 0:2, order);
+    order = {'Y2', 'Y1', 'Y3', 'Y4'};
+    q = model.notThrough('Y1', 0:1, order);
+    q = model.through('Y1', 0:1, order);
+    q = model.notThrough({'Y1', 'Y2'}, 0:2, order);
+    q = model.through({'Y1', 'Y2'}, 0:2, order);
+    q = model.through({'Y1', 'Y2'}, {0:2, 0:1}, order);
+    q = model.notThrough([1, 2], 0:2, order);
+    q = model.through([1, 2], 0:2, order);
+
+    % Computing transmission effects from LP using Recursive
+    order = {'Y2', 'Y1', 'Y3', 'Y4'};
+    q = model.notThrough('Y1', 0:1, order);
+    shock = 1;
+    effects = model.transmission(shock, q, order, maxHorizon);
+    % Following should all be NaN because second shock has not been identified. 
+    % I.e. treatment = 1;
+    shock = 2;
+    effects = model.transmission(shock, q, order, maxHorizon);
+    % we can fix this by setting treatment = 2
+    treatment = 2;
+    model = LP(Y, treatment, p, horizons, 'includeConstant', true);
+    method = Recursive();
+    model.fit(method);
+    effects = model.transmission(shock, q, order, maxHorizon);
+
+    treatment = 1;
+    model = LP(Y, treatment, p, horizons, 'includeConstant', true);
+    order = {'Y2', 'Y1', 'Y3', 'Y4'};
+    q = model.notThrough('Y1', 0:1, order);
+    shock = 1;
+    method = Recursive();
+    effects = model.transmission(shock, q, order, maxHorizon, 'identificationMethod', method);
+
+    % Computing transmission effects from LP using ExternalInstrument
+    % TODO: implement this test. 
+end
