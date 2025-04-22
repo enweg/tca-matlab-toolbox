@@ -21,8 +21,11 @@ function q = notThrough(idx, horizons, order)
     %
     %   - `idx` (vector of integers): Indices of the variables that paths cannot 
     %     go through, using their original indices in the dynamic system.
-    %   - `horizons` (cell array of vectors): Each element specifies the time 
-    %     horizons for the corresponding variable in `idx`.
+    %   - `horizons` (cell array of vectors or vector of integer): If a single 
+    %     vector of integers is provided, then it will be applied to each `idx`. 
+    %     Alternatively, a cell array of integer vectors can be provided in which 
+    %     case each element in the cell array applies to the respective element
+    %     in `idx`.
     %   - `order` (vector of integers): Variable ordering determined by the 
     %     transmission matrix.
     %
@@ -44,6 +47,15 @@ function q = notThrough(idx, horizons, order)
     %
     %   See also `through`, `transmission`
 
+    if length(idx) > 1 && ~iscell(horizons)
+        % Allowing users to provide multiple indices that should be shut off
+        % for the same horizons without having to provide the horizons separately.
+        horizonsCell = cell(1, length(idx));
+        for i = 1:length(idx)
+            horizonsCell{i} = horizons;
+        end
+        horizons = horizonsCell;
+    end
     if length(idx) > 1 && iscell(horizons)
         % Case when idx is a vector
         qs = arrayfun(@(ii) notThrough(idx(ii), horizons{ii}, order), 1:length(idx), 'UniformOutput', false);
