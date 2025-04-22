@@ -22,6 +22,10 @@ classdef ExternalInstrument < IdentificationMethod
                 opts.(varargin{i}) = varargin{i+1};
             end
 
+            if ischar(instruments)
+                instruments = {instruments};
+            end
+
             obj.treatment = treatment; 
             obj.instruments = instruments; 
             obj.normalisingHorizon = opts.normalisingHorizon;
@@ -84,8 +88,5 @@ classdef ExternalInstrument < IdentificationMethod
             varargout{1} = coeffs;
         end
 
-        % FIX: implement this function
-        function effects = identifyTransmission()
-        end
     end
 end

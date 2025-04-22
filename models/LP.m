@@ -192,7 +192,7 @@ classdef LP < handle & Model
 
             requireFitted(obj);
             data = obj.getInputData();
-            k = size(data, 2);
+            k = size(obj.Y, 2);
             idxTreatment = findVariableIndex(data, obj.treatment);
 
             irfs = nan(k, k, maxHorizon + 1);
