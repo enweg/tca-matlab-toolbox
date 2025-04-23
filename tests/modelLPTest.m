@@ -141,31 +141,31 @@ function testLPExternalInstrument(testCase)
 
     shocks = randn(k, T);
     Y = SVAR.simulate(shocks, A0, APlus, 'trendExponents', trendExponents);
-    data = [shocks(1, :)' Y];
-    data = array2table(data, 'VariableNames', {'instrument', 'Y1', 'Y2', 'Y3'});
+    data = array2table(Y);
+    instrumentData = array2table(shocks(1, :)', 'VariableNames', {'instrument'});
 
     maxHorizon = 4;
     irfsTrue = SVAR.IRF_(A0, APlus(:, (m+1):end), p, maxHorizon);
     irfsTrue = irfsTrue(:, 1, :) ./ irfsTrue(1, 1, 1);
 
-    % Defining treatment and instrument by number
-    treatment = 2;
+    % Defining treatment by index
+    treatment = 1;
     model = LP(data, treatment, p, 0:maxHorizon);
-    method = ExternalInstrument(2, 1);
+    method = ExternalInstrument(treatment, instrumentData);
     model.fit(method);
     irfObj = model.IRF(maxHorizon);
-    irfsLP = irfObj.irfs(2:end, :, :);
+    irfsLP = irfObj.irfs(:, 1, :);
 
     testDiff = irfsLP - irfsTrue;
     assert(all(max(abs(testDiff), [], 'all') < 1e-2));
 
-    % Defining treatment and instrument by name
+    % Defining treatment by name
     treatment = 'Y1';
     model = LP(data, treatment, p, 0:maxHorizon);
-    method = ExternalInstrument(treatment, {'instrument'});
+    method = ExternalInstrument(treatment, instrumentData);
     model.fit(method);
     irfObj = model.IRF(maxHorizon);
-    irfsLPName = irfObj.irfs(2:end, :, :);
+    irfsLPName = irfObj.irfs(:, 1, :);
 
     testDiff = irfsLPName - irfsLP;
     assert(all(max(abs(testDiff), [], 'all') < sqrt(eps())));
@@ -174,16 +174,15 @@ function testLPExternalInstrument(testCase)
     assert(all(max(abs(testDiff), [], 'all') < 1e-2));
 
     % creating multiple instruments
-    data.instrument2 = data.instrument + 0.1 * randn(T, 1);
-    data.instrument3 = data.instrument + 0.1 * randn(T, 1);
-    data = data(:, {'instrument', 'instrument2', 'instrument3', 'Y1', 'Y2', 'Y3'});
+    instrumentData.instrument2 = instrumentData.instrument + 0.1 * randn(T, 1);
+    instrumentData.instrument3 = instrumentData.instrument + 0.1 * randn(T, 1);
 
     treatment = 'Y1';
     model = LP(data, treatment, p, 0:maxHorizon);
-    method = ExternalInstrument(treatment, {'instrument', 'instrument2', 'instrument3'});
+    method = ExternalInstrument(treatment, instrumentData);
     model.fit(method);
     irfObj = model.IRF(maxHorizon);
-    irfsLPName = irfObj.irfs(4:end, :, :);
+    irfsLPName = irfObj.irfs(:, 1, :);
 
     testDiff = irfsLPName - irfsTrue;
     assert(all(max(abs(testDiff), [], 'all') < 1e-2));
@@ -191,14 +190,14 @@ function testLPExternalInstrument(testCase)
     % Changing the normalising horizon
     treatment = 'Y2'; 
     % Changing shock because effect of shock1 on Y1 close to zero for h=1
-    data.instrument = shocks(2, :)';
-    data.instrument2 = data.instrument + 0.1 * randn(T, 1);
-    data.instrument3 = data.instrument + 0.1 * randn(T, 1);
+    instrumentData.instrument = shocks(2, :)';
+    instrumentData.instrument2 = instrumentData.instrument + 0.1 * randn(T, 1);
+    instrumentData.instrument3 = instrumentData.instrument + 0.1 * randn(T, 1);
     model = LP(data, treatment, p, 0:maxHorizon);
-    method = ExternalInstrument(treatment, {'instrument', 'instrument2', 'instrument3'}, 'normalisingHorizon', 1);
+    method = ExternalInstrument(treatment, instrumentData, 'normalisingHorizon', 1);
     model.fit(method);
     irfObj = model.IRF(maxHorizon);
-    irfsLPName = irfObj.irfs(4:end, :, :);
+    irfsLPName = irfObj.irfs(:, 2, :);
     % Need to adjust the true IRFs too
     irfsTrue = SVAR.IRF_(A0, APlus(:, (m+1):end), p, maxHorizon);
     irfsTrue = irfsTrue(:, 2, :) ./ irfsTrue(2, 2, 2);
@@ -269,7 +268,7 @@ function testSVARTransmission(testCase)
     method = Recursive();
     model.fit(method);
     effects = model.transmission(shock, q, order, maxHorizon);
-
+    % Doing the same but providing Recursive to transmission
     treatment = 1;
     model = LP(Y, treatment, p, horizons, 'includeConstant', true);
     order = {'Y2', 'Y1', 'Y3', 'Y4'};
@@ -279,5 +278,18 @@ function testSVARTransmission(testCase)
     effects = model.transmission(shock, q, order, maxHorizon, 'identificationMethod', method);
 
     % Computing transmission effects from LP using ExternalInstrument
-    % TODO: implement this test. 
+    shocks = randn(k, T);
+    Y = SVAR.simulate(shocks, A0, APlus, 'trendExponents', trendExponents);
+    data = array2table(Y);
+    instrumentData = array2table(shocks(1, :)', 'VariableNames', {'instrument'});
+
+    treatment = 'Y1';
+    model = LP(data, treatment, p, 0:maxHorizon);
+    method = ExternalInstrument(treatment, instrumentData);
+    model.fit(method);
+    order = {'Y2', 'Y1', 'Y3', 'Y4'};
+    q = model.notThrough('Y1', 0:1, order);
+    irfObj = model.IRF(maxHorizon);
+    shock = 1;
+    effects = model.transmission(shock, q, order, maxHorizon);
 end

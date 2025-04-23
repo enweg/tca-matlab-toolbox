@@ -1,7 +1,7 @@
 classdef ExternalInstrument < IdentificationMethod
     properties
         treatment           % number of variale name
-        instruments         % numbers or variable names (if names must be cell)
+        instruments         % matrix or table
         normalisingHorizon  % number
     end
 
@@ -22,8 +22,8 @@ classdef ExternalInstrument < IdentificationMethod
                 opts.(varargin{i}) = varargin{i+1};
             end
 
-            if ischar(instruments)
-                instruments = {instruments};
+            if ~ismatrix(instruments)
+                error("Instruments must be provided as matrix or table.");
             end
 
             obj.treatment = treatment; 
@@ -32,47 +32,46 @@ classdef ExternalInstrument < IdentificationMethod
         end
 
         function varargout = identify(obj, model)
+            switch class(model)
+                case 'LP'
+                    varargout{1} = obj.identifyLP_(model);
+                otherwise
+                    error(class(model) + " not supported.");
+            end
+        end
+
+        function coeffs = identifyLP_(obj, model)
             data = model.getInputData();
             idxTreatment = findVariableIndex(data, model.treatment);
             idxInstrumentTreatment = findVariableIndex(data, obj.treatment);
             if idxTreatment ~= idxInstrumentTreatment
                 error("Treatment of LP and ExternalInstrument differ.");
             end
-            if iscell(obj.instruments)
-                % instruments were provided by name
-                idxInstruments = cellfun(@(x) findVariableIndex(data, x), obj.instruments);
-            else
-                % instruments are already provided by index
-                idxInstruments = obj.instruments;
-            end
-            if ~all(idxInstruments < idxTreatment)
-                error("Instruments must come before treatment in data.");
+            if size(obj.instruments, 1) ~= size(data, 1)
+                error("Instruments must be observed over the same period as the data.");
             end
 
+            Z = obj.instruments;
+            if istable(Z)
+                Z = table2array(Z);
+            end
+            Z = Z((model.p+1):end, :);
+            
             m = model.includeConstant;
-            % model.X = [constant contemporaneous treatment lag]
-            Z = model.X(:, idxInstruments + m);
-            % we assume instruments are completely excluded from model
-            X = model.X(:, setdiff(1:size(model.X, 2), idxInstruments + m));
-            % we also need to adjus the treatment index
-            model.treatment = idxTreatment - length(idxInstruments);
-
-
             if obj.normalisingHorizon > 0
                 % lead the treatment column in X to adjust for which horizon 
                 % the unit effect normalisation applies to
                 nlead = obj.normalisingHorizon;
-                X(:, model.treatment+m) = makeLeadMatrix(X(:, model.treatment+m), nlead);
+                model.X(:, idxTreatment+m) = makeLeadMatrix(model.X(:, idxTreatment+m), nlead);
                 % remove NaNs at end of data
-                X = X(1:(end-nlead), :);
+                model.X = model.X(1:(end-nlead), :);
                 model.Y = model.Y(1:(end-nlead), :, :);
                 Z = Z(1:(end-nlead), :);
             end
-            model.X = X;
 
             % Adding all other exogenous variables to Z
             % these are all variables that are not the treatment variable
-            Z = [Z X(:, setdiff(1:size(X, 2), model.treatment + m))];
+            Z = [Z model.X(:, setdiff(1:size(model.X, 2), idxTreatment + m))];
 
             k = size(model.Y, 2);
             numCoeffs = size(model.X, 2);
@@ -84,9 +83,6 @@ classdef ExternalInstrument < IdentificationMethod
                 Zi = Z(1:(end-h), :);
                 coeffs(:, :, i) = ExternalInstrument.fit2SLS_(X, Y, Zi)';
             end
-
-            varargout{1} = coeffs;
         end
-
     end
 end
