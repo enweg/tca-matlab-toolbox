@@ -418,7 +418,6 @@ classdef DSGE < handle & Model
             irfObj = IRFContainer(irfs, varnames, obj);
         end
 
-        % TODO: test
         function effects = transmission(obj, shock, condition, order, maxHorizon)
             if ~ischar(shock) && ~isnumeric(shock)
                 error("The shock must either be given as integer or using the shock's name.");

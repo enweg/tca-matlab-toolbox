@@ -123,3 +123,27 @@ function testDSGEVarmaGali2015(testCase)
     testeps_a = max(vec(abs(irfsDSGEeps_a - irfsVarma(:, idx, :) * shockSize)));
     assert(testeps_a < tol);
 end
+
+function testDSGETransmission(testCase)
+    % THESE TESTS ARE ONLY IMPLEMENTATION TESTS. THE UNDERLYING FUNCTIONS 
+    % HAVE BEEN TESTED ELSEWHERE. 
+
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % SW2007
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    load ./tests/SW2007/SW2007/Output/SW2007_results.mat
+    model = DSGE(M_, options_, oo_);
+    maxHorizon = 19;
+
+    order = {'robs', 'dw', 'dy', 'dc', 'dinve', 'labobs', 'pinfobs'};
+    q = ~model.notThrough('dw', 0:maxHorizon, order);
+    shock = 'em';
+    effects = model.transmission(shock, q, order, maxHorizon);
+    effects(4, :, :)
+
+    order = {'robs', 'dy', 'dc', 'dinve', 'labobs', 'dw', 'pinfobs'};
+    q = ~model.notThrough('dw', 0:maxHorizon, order);
+    shock = 'em';
+    effects = model.transmission(shock, q, order, maxHorizon);
+    effects(4, :, :)
+end
