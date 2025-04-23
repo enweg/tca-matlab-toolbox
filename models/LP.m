@@ -202,7 +202,6 @@ classdef LP < handle & Model
             irfObj = IRFContainer(irfs, varnames, obj, opts.identificationMethod);
         end
 
-        % TODO: test
         function effects = transmission(obj, shock, condition, order, maxHorizon, varargin)
 
             opts.identificationMethod = missing;
