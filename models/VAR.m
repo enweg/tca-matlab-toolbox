@@ -530,6 +530,16 @@ classdef VAR < handle & Model
         end
 
         function flag = isStable(obj)
+            % `isStable` Check if the VAR model is stable.
+            %
+            %   `flag = isStable(obj)` returns true if the spectral radius of
+            %   the companion matrix is less than 1.
+            %
+            %   ## Arguments
+            %   - `obj` (VAR): VAR model object.
+            %
+            %   ## Returns
+            %   - `flag` (logical): True if the model is stable, false otherwise.
             requireFitted(obj);
             flag = (spectralRadius(obj) < 1);
         end
