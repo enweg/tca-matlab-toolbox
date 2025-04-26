@@ -1,4 +1,18 @@
 classdef DSGE < handle & Model
+    % `DSGE` Dynamic Stochastic General Equilibrium (DSGE) model.
+    %
+    %   This class specifies a DSGE model structure. The model must
+    %   be previously computed using Dynare. It provides access to
+    %   the Dynare output structures.
+    %
+    %   ## Properties
+    %   - `M_` (struct): Model structure returned by Dynare.
+    %   - `options_` (struct): Options structure from Dynare.
+    %   - `oo_` (struct): Output structure with results from Dynare.
+    %
+    %   ## Notes
+    %   - The model must have already been solved in Dynare.
+    %   - This class serves as a wrapper to interface with Dynare output.
     properties
         % The following are all structs returned by Dynare
         M_
@@ -9,6 +23,8 @@ classdef DSGE < handle & Model
     methods (Static)
 
         function checkDynare_()
+            % `checkDynare_` Ensure Dynare is properly loaded and available.
+
             % First check if Dynare is loaded
             if exist("dynare", "file") == 2
                 pathDynare = fileparts(which("dynare.m"));
@@ -42,23 +58,22 @@ classdef DSGE < handle & Model
         end
 
         function order = defineOrder_(vars, options_)
-            % `defineOrder` Determine the ordering (the transmission matrix) of
-            % observed variables in a DSGE model. 
+            % `defineOrder_` Determine the ordering of observed variables.
             %
-            %   `defineOrder(vars, options_)` returns an ordering vector `order` that
-            %   maps the variables in `vars` to their corresponding positions in the
-            %   list of observed variables of a DSGE model estimated using Dynare. It 
-            %   therefore defines the transmission matrix and can be used in `makeB`, 
-            %   `makeOmega`, `makeSystemsForm`, `makeConditionY`, `notThrough`, `through`, 
-            %   and `transmission`. 
+            %   `defineOrder_(vars, options_)` returns an ordering vector `order`
+            %   that maps the variables in `vars` to their corresponding positions
+            %   in the list of observed variables of a DSGE model estimated using
+            %   Dynare. It defines the transmission matrix and can be used in
+            %   `makeB`, `makeOmega`, `makeSystemsForm`, `makeConditionY`,
+            %   `notThrough`, `through`, and `transmission`.
             %
             %   ## Arguments
             %   - `vars` (vector): A list of observed variable names.
-            %   - `options_` (struct): Returned by Dynare.
+            %   - `options_` (struct): Options structure returned by Dynare.
             %
             %   ## Returns
-            %   - `order` (vector): A vector containing the indices of `vars` in the
-            %     original observed variable list.
+            %   - `order` (vector): Indices of `vars` in the original observed
+            %     variable list.
             %
             %   See also `transmission`, `through`, `notThrough`, `makeSystemsForm`.
             varsOriginal = DSGE.dynareCellArrayToVec_(options_.varobs);
@@ -77,41 +92,42 @@ classdef DSGE < handle & Model
         end
 
         function [Phi0, As, Psis, p, q] = dynareToVarma_(M_, oo_, options_, maxKappa)
-            % `dynareToVarma` Transform a DSGE model into a VARMA representation.
+            % `dynareToVarma_` Transform a DSGE model into VARMA representation.
             %
-            %   `[Phi0, As, Psis, p, q] = dynareToVarma(M_, oo_, options_, maxKappa)`
-            %   converts a linearized DSGE model estimated using Dynare into a VARMA form,
-            %   following the method of Morris (2016).
+            %   `[Phi0, As, Psis, p, q] = dynareToVarma_(M_, oo_, options_, maxKappa)`
+            %   converts a linearized DSGE model estimated using Dynare into a
+            %   VARMA form, following the method of Morris (2016).
             %
             %   ## Arguments
-            %   - `M_` (struct): Returned by Dynare. 
-            %   - `oo_` (struct): Returned by Dynare. 
-            %   - `options_` (struct): Returned by Dynare. 
-            %   - `maxKappa` (integer, optional): Tuning parameter in Morris (2016). 
-            %      Related to the maximum AR order via `maxArOrder=maxKappa+1`.
-            %      Defaults to 20. 
+            %   - `M_` (struct): Model structure returned by Dynare.
+            %   - `oo_` (struct): Output structure returned by Dynare.
+            %   - `options_` (struct): Options structure returned by Dynare.
+            %   - `maxKappa` (integer, optional): Tuning parameter related to
+            %     maximum AR order via `maxArOrder = maxKappa + 1`. Defaults to 20.
             %
             %   ## Returns
-            %   - `Phi0` (matrix): Impact matrix linking structural shocks to reduced-form errors.
-            %   - `As` (cell array): AR coefficient matrices `{A_1, A_2, ..., A_p}`.
-            %   - `Psis` (cell array): MA coefficient matrices `{Psi_1, Psi_2, ..., Psi_q}`.
-            %   - `p` (integer): The determined autoregressive order of the VARMA representation.
-            %   - `q` (integer): The determined moving average order of the VARMA representation.
+            %   - `Phi0` (matrix): Impact matrix linking shocks to reduced-form errors.
+            %   - `As` (cell array): AR coefficient matrices `{A_1, ..., A_p}`.
+            %   - `Psis` (cell array): MA coefficient matrices `{Psi_1, ..., Psi_q}`.
+            %   - `p` (integer): Determined autoregressive order.
+            %   - `q` (integer): Determined moving average order.
             %
             %   ## Methodology
-            %   The function follows the approach outlined in Morris (2016) and returns
-            %   a VARMA of the form: 
+            %   The function follows the approach outlined in Morris (2016) 
+            %   and returns a VARMA of the form: 
             %   $$
             %   y_t = \sum_{i=1}^{p} A_i y_{t-i} + \sum_{j=1}^{q} \Psi_j u_{t-j} + u_t,
             %   $$
             %   where:
-            %   - $u_t = \Phi_0 \varepsilon_t$, with $\varepsilon_t$ being structural shocks.
+            %   - $u_t = \Phi_0 \varepsilon_t$, with $\varepsilon_t$ 
+            %     being structural shocks.
             %
             %   ## Reference
-            %   - Morris, S. D. (2016). "VARMA representation of DSGE models." *Economics Letters*, 138, 30–33.
+            %   - Morris, S. D. (2016). "VARMA representation of DSGE models." 
+            %     *Economics Letters*, 138, 30–33.
             %     [https://doi.org/10.1016/j.econlet.2015.11.027](https://doi.org/10.1016/j.econlet.2015.11.027)
             %
-            %   See also `getABCD`, `varmaIrfs`.
+            %   See also `getABCD_`, `varmaIrfs_`.
 
             % Checking if Dynare is setup
             DSGE.checkDynare_();
@@ -216,9 +232,9 @@ classdef DSGE < handle & Model
         end
 
         function [A, B, C, D] = getABCD_(M_, oo_, options_)
-            % `getABCD` Obtain the ABCD state-space representation of a DSGE model.
+            % `getABCD_` Obtain the ABCD state-space representation of a DSGE model.
             %
-            %   `[A, B, C, D] = getABCD(M_, oo_, options_)` computes the state-space
+            %   `[A, B, C, D] = getABCD_(M_, oo_, options_)` computes the state-space
             %   representation 
             %   $$
             %   \begin{split}
@@ -235,12 +251,14 @@ classdef DSGE < handle & Model
             %
             %   ## Returns
             %   - `A` (matrix): State transition matrix. See above equation.
-            %   - `B` (matrix): Control input matrix capturing exogenous shocks. See above equation.
-            %   - `C` (matrix): Observation matrix mapping state variables to observed variables. See above equation.
+            %   - `B` (matrix): Control input matrix capturing exogenous shocks. 
+            %     See above equation.
+            %   - `C` (matrix): Observation matrix mapping state variables to 
+            %     observed variables. See above equation.
             %   - `D` (matrix): Observation noise matrix. See above equation.
             %
             %   ## Notes
-            %   - Requires MATLAB's Control Toolbox. 
+            %   - Requires MATLAB's Control System Toolbox. 
             %
 
             if ~isfield(options_,'varobs_id')
@@ -276,13 +294,15 @@ classdef DSGE < handle & Model
         end
 
         function shockSize = getShockSize_(shockName, M_)
-            % `getShockSize` Obtain the standard deviation of a specified shock.
+            % `getShockSize_` Obtain the standard deviation of a specified shock.
             %
-            %   `shockSize = getShockSize(shockName, M_)` computes the standard
-            %   deviation (size) of a specified shock in a DSGE model estimated using Dynare.
+            %   `shockSize = getShockSize_(shockName, M_)` computes the standard
+            %   deviation (size) of a specified shock in a DSGE model 
+            %   estimated using Dynare.
             %
             %   ## Arguments
-            %   - `shockName` (string): The name of the shock whose size and index are required.
+            %   - `shockName` (string): The name of the shock whose size and 
+            %     index are required.
             %   - `M_` (struct): Returned by Dynare.
             %
             %   ## Returns
@@ -299,11 +319,13 @@ classdef DSGE < handle & Model
         end
 
         function irfs = varmaIrfs_(Phi0, As, Psis, horizon)
-            % `varmaIrfs` Compute structural impulse response functions (IRFs) for a VARMA model.
+            % `varmaIrfs_` Compute structural impulse response functions (IRFs) 
+            % for a VARMA model.
             %
-            %   `irfs = varmaIrfs(Phi0, As, Psis, horizon)` computes the structural impulse
-            %   response functions (IRFs) of a VARMA model, given the structural shock impact
-            %   matrix, autoregressive (AR) coefficients, and moving average (MA) coefficients.
+            %   `irfs = varmaIrfs_(Phi0, As, Psis, horizon)` computes the 
+            %   structural impulse response functions (IRFs) of a VARMA model, 
+            %   given the structural shock impact matrix, autoregressive (AR) 
+            %   coefficients, and moving average (MA) coefficients.
             %
             %   ## Model Specification
             %   The VARMA model is defined as:
@@ -311,21 +333,26 @@ classdef DSGE < handle & Model
             %   y_t = \sum_{i=1}^{p} A_i y_{t-i} + \sum_{j=1}^{q} \Psi_j u_{t-j} + u_t,
             %   $$
             %   where:
-            %   - $u_t = \Phi_0 \varepsilon_t$, with $\varepsilon_t$ being structural shocks.
+            %   - $u_t = \Phi_0 \varepsilon_t$, with $\varepsilon_t$ being 
+            %     structural shocks.
             %
             %   ## Arguments
-            %   - `Phi0` (matrix): Impact matrix linking structural shocks to reduced-form errors.
-            %   - `As` (cell array): AR coefficient matrices `{A_1, A_2, ..., A_p}`.
-            %   - `Psis` (cell array): MA coefficient matrices `{Psi_1, Psi_2, ..., Psi_q}`.
-            %   - `horizon` (integer): Number of periods for which IRFs are computed.
-            %      `horizon=0` means only contemporaneous impulses are computed which are 
-            %      the same as `Phi0`.
+            %   - `Phi0` (matrix): Impact matrix linking structural shocks to 
+            %     reduced-form errors.
+            %   - `As` (cell array): AR coefficient matrices 
+            %     `{A_1, A_2, ..., A_p}`.
+            %   - `Psis` (cell array): MA coefficient matrices 
+            %     `{Psi_1, Psi_2, ..., Psi_q}`.
+            %   - `horizon` (integer): Number of periods for which IRFs are 
+            %     computed. `horizon=0` means only contemporaneous impulses are 
+            %     computed which are the same as `Phi0`.
             %
             %   ## Returns
-            %   - `irfs` (3D array): Structural IRFs of size `(n, m, horizon+1)`, where `n`
-            %     is the number of endogenous variables, `m` is the number of shocks, 
-            %     assumed to satisfy `m=n`. The IRFs capture the dynamic response
-            %     of each variable to a unit shock over the specified horizon.
+            %   - `irfs` (3D array): Structural IRFs of size `(n, m, horizon+1)`, 
+            %     where `n` is the number of endogenous variables, `m` is the 
+            %     number of shocks, assumed to satisfy `m=n`. The IRFs capture 
+            %     the dynamic response of each variable to a unit shock over 
+            %     the specified horizon.
             %
 
             p = length(As);
@@ -356,17 +383,71 @@ classdef DSGE < handle & Model
         end
 
         function idx = getVariableIdx(obj, varname)
+            % `getVariableIdx` Get index of an observed variable in DSGE model.
+            %
+            %   `idx = getVariableIdx(obj, varname)` returns the index of
+            %   `varname` in the list of observed variables of a DSGE model.
+            %
+            %   ## Arguments
+            %   - `obj` (DSGE): DSGE model object.
+            %   - `varname` (char): Name of the observed variable.
+            %
+            %   ## Returns
+            %   - `idx` (integer): Index of the observed variable.
+            %
+            %   See also `getShockIdx`, `getShockSize`
             idx = DSGE.getVariableIdx_(varname, obj.options_);
         end
         function idx = getShockIdx(obj, shockname)
+            % `getShockIdx` Get index of a structural shock in DSGE model.
+            %
+            %   `idx = getShockIdx(obj, shockname)` returns the index of
+            %   `shockname` in the list of shocks of a DSGE model.
+            %
+            %   ## Arguments
+            %   - `obj` (DSGE): DSGE model object.
+            %   - `shockname` (char): Name of the structural shock.
+            %
+            %   ## Returns
+            %   - `idx` (integer): Index of the structural shock.
+            %
+            %   See also `getVariableIdx`, `getShockSize`
             idx = DSGE.getShockIdx_(shockname, obj.M_);
         end
         function shockSize = getShockSize(obj, shockname)
+            % `getShockSize` Get size (standard deviation) of a structural shock.
+            %
+            %   `shockSize = getShockSize(obj, shockname)` returns the standard
+            %   deviation of the specified structural shock.
+            %
+            %   ## Arguments
+            %   - `obj` (DSGE): DSGE model object.
+            %   - `shockname` (char): Name of the structural shock.
+            %
+            %   ## Returns
+            %   - `shockSize` (number): Standard deviation of the shock.
+            %
+            %   See also `getVariableIdx`, `getShockIdx`
             shockSize = DSGE.getShockSize_(shockname, obj.M_);
         end
 
         function [Phi0, As, Psis] = coeffs(obj)
-            % returns the VARMA coeffs
+            % `coeffs` Return VARMA coefficients from the DSGE model.
+            %
+            %   `[Phi0, As, Psis] = coeffs(obj)` computes and returns the
+            %   VARMA coefficients of the DSGE model.
+            %
+            %   ## Returns
+            %   - `Phi0` (matrix): Contemporaneous impact effects of
+            %     structural shocks.
+            %   - `As` (cell array): Reduced-form AR coefficient matrices.
+            %   - `Psis` (cell array): Reduced-form MA coefficient matrices.
+            %
+            %   ## Notes
+            %   - Internally calls `dynareToVarma_` to extract VARMA form.
+            %   - The method follows Morris (2016) for VARMA approximation.
+            %
+            %   See also `DSGE.dynareToVarma_`
             [Phi0, As, Psis, p, q] = DSGE.dynareToVarma_(obj.M_, obj.oo_, obj.options_);
         end
 
@@ -375,6 +456,7 @@ classdef DSGE < handle & Model
         end
 
         function shocks = getShockNames(obj)
+            % `getShockNames` returns a vector of shock names. 
             shocks = DSGE.dynareCellArrayToVec_(obj.M_.exo_names);
         end
 
@@ -412,6 +494,22 @@ classdef DSGE < handle & Model
         end
 
         function irfObj = IRF(obj, maxHorizon)
+            % `IRF` Compute impulse response functions for DSGE model.
+            %
+            %   `irfObj = IRF(obj, maxHorizon)` computes IRFs of the DSGE
+            %   model up to horizon `maxHorizon`.
+            %
+            %   ## Arguments
+            %   - `obj` (DSGE): DSGE model object.
+            %   - `maxHorizon` (integer): Maximum forecast horizon.
+            %
+            %   ## Returns
+            %   - `irfObj` (IRFContainer): Container with computed IRFs.
+            %
+            %   ## Notes
+            %   - Uses VARMA representation for IRF computation.
+            %
+            %   See also `coeffs`, `dynareToVarma_`, `varmaIrfs_`
             [Phi0, As, Psis] = obj.coeffs();
             irfs = DSGE.varmaIrfs_(Phi0, As, Psis, maxHorizon);
             varnames = obj.getVariableNames();
@@ -419,6 +517,29 @@ classdef DSGE < handle & Model
         end
 
         function effects = transmission(obj, shock, condition, order, maxHorizon)
+            % `transmission` Compute transmission effects in a DSGE model.
+            %
+            %   `effects = transmission(obj, shock, condition, order, maxHorizon)`
+            %   computes the transmission effects for a `shock` under a
+            %   `condition` based on `order`, up to `maxHorizon`.
+            %
+            %   ## Arguments
+            %   - `obj` (DSGE): DSGE model object.
+            %   - `shock` (char or int): Shock name or index.
+            %   - `condition` (Q): Transmission condition object.
+            %   - `order` (cell array or vector): Variable ordering.
+            %   - `maxHorizon` (integer): Maximum forecast horizon.
+            %
+            %   ## Returns
+            %   - `effects` (3D array): Transmission effects over horizons:
+            %       - First dimension: Endogenous variables.
+            %       - Second dimension: Selected shock.
+            %       - Third dimension: Horizon.
+            %
+            %   ## Notes
+            %   - `shock` and `order` can be provided by name or index.
+            %
+            %   See also `DSGE.through`, `DSGE.notThrough`
             if ~ischar(shock) && ~isnumeric(shock)
                 error("The shock must either be given as integer or using the shock's name.");
             end
