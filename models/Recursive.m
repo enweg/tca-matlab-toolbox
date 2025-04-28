@@ -1,4 +1,16 @@
 classdef Recursive < IdentificationMethod 
+    % `Recursive` Identify reduced-form models using recursivity.
+    %
+    %   This class implements identification under a recursive
+    %   (Cholesky) structure, assuming conditional ignorability.
+    %
+    %   ## Notes
+    %   - For SVARs, this corresponds to Cholesky identification.
+    %   - For LPs, it assumes conditioning on prior ordered variables.
+    %   - Commonly used in macroeconomics when contemporaneous shocks
+    %     are assumed to have a lower triangular impact.
+    %
+    %   See also `IdentificationMethod`, `SVAR`, `LP`
     methods (Static)
 
         function [A0, APlus] = identifyVAR_(B, SigmaU)

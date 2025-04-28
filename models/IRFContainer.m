@@ -1,9 +1,24 @@
 classdef IRFContainer
+    % `IRFContainer` Container for storing impulse response functions.
+    %
+    %   This class holds IRFs, variable names, the originating model,
+    %   and the identification method used (if any).
+    %
+    %   ## Properties
+    %   - `irfs` (3D array): IRFs with dimensions:
+    %       - First: Response variable.
+    %       - Second: Shock.
+    %       - Third: Horizon.
+    %   - `varnames` (cell array): Names of response variables.
+    %   - `model` (Model): Model used to compute the IRFs.
+    %   - `identificationMethod` (IdentificationMethod):
+    %       - Identification method if the model is reduced form.
+
     properties
-       irfs
-       varnames
-       model
-       identificationMethod
+       irfs                 % 3d array of IRFs with diemensions (response variable, shock, horizon)
+       varnames             % variable names for the response variables
+       model                % model used to compute the IRFs
+       identificationMethod % identification method if `model` is reduced form and IRFs are structural
     end
 
     methods
@@ -22,6 +37,10 @@ classdef IRFContainer
             obj.varnames = varnames; 
             obj.model = model; 
             obj.identificationMethod = identificationMethod;
+        end
+
+        function irfs = getIrfArray(obj)
+            irfs = obj.irfs; 
         end
 
         % Customising indexing

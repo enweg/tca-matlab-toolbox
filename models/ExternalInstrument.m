@@ -1,4 +1,26 @@
 classdef ExternalInstrument < IdentificationMethod
+    % `ExternalInstrument` Identify IRFs using external instruments.
+    %
+    %   This class identifies structural IRFs from (S)VARs using the
+    %   external instrument approach proposed by Stock and Watson (2018).
+    %
+    %   ## Notes
+    %   - IRFs are computed relative to the reaction of the
+    %     `treatment` variable at `normalisingHorizon`.
+    %   - `instruments` must be a matrix or table spanning the same
+    %     period as the model data.
+    %   - Defaults:
+    %     - `normalisingHorizon = 0`
+    %
+    %   ## Reference
+    %   - Stock, J. H., & Watson, M. W. (2018).
+    %     "Identification and Estimation of Dynamic Causal Effects in
+    %     Macroeconomics Using External Instruments."
+    %     *The Economic Journal*, 128(610), 917-948.
+    %     [https://doi.org/10.1111/ecoj.12593]
+    %
+    %   See also `IdentificationMethod`, `Recursive`, `InternalInstrument`
+
     properties
         treatment           % number of variale name
         instruments         % matrix or table

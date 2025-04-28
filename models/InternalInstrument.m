@@ -1,4 +1,29 @@
 classdef InternalInstrument < IdentificationMethod
+    % `InternalInstrument` Identify IRFs using internal instruments.
+    %
+    %   This class identifies impulse responses in (S)VARs using the
+    %   internal instruments method proposed by Plagborg-Moller and
+    %   Wolf (2021).
+    %
+    %   ## Notes
+    %   - IRFs are computed from Cholesky-orthogonalized shocks with
+    %     respect to the selected `instrument`.
+    %   - Shocks are normalized by the response of the
+    %     `normalisingVariable` at `normalisingHorizon`.
+    %   - The `instrument` can be specified as an integer (index) or
+    %     character (variable name).
+    %   - Defaults:
+    %     - `instrument = 1` (first variable)
+    %     - `normalisingHorizon = 0`
+    %
+    %   ## Reference
+    %   - Plagborg-Moller, M., & Wolf, C. K. (2021).
+    %     "Local Projections and VARs Estimate the Same Impulse Responses."
+    %     *Econometrica*, 89(2), 955-980.
+    %     [https://doi.org/10.3982/ecta17813]
+    %
+    %   See also `IdentificationMethod`, `Recursive`
+
     properties
         instrument
         normalisingVariable
