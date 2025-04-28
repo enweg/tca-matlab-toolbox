@@ -512,6 +512,13 @@ classdef DSGE < handle & Model
             %   See also `coeffs`, `dynareToVarma_`, `varmaIrfs_`
             [Phi0, As, Psis] = obj.coeffs();
             irfs = DSGE.varmaIrfs_(Phi0, As, Psis, maxHorizon);
+            % Adjusting all IRFs for the shock sizes
+            shockNames = obj.getShockNames();
+            for i = 1:length(shockNames)
+                shockSize = obj.getShockSize(shockNames(i));
+                irfs(:, i, :) = irfs(:, i, :) * shockSize;
+            end
+
             varnames = obj.getVariableNames();
             irfObj = IRFContainer(irfs, varnames, obj);
         end
