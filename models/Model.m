@@ -1,4 +1,6 @@
 classdef (Abstract) Model < handle
+    % Abstract Model Class
+
     methods (Abstract)
         % Returns true if the model has been fitted. 
         isFitted(obj);
