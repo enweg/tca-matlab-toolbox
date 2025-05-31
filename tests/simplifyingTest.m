@@ -192,5 +192,14 @@ function testNOT(testCase)
     assert(length(q.vars) == 1);
     assert(isequal(q.vars{1}, '!x2 & !x1'));
     assert(q.multiplier(1) == 1);
+
+    q = ~x1;
+    q2 = ~q;
+    assert(length(q.vars) == 1);
+    assert(length(q2.vars) == 1);
+    assert(isequal(q.vars{1}, '!x1'));
+    assert(isequal(q2.vars{1}, 'x1'));
+    assert(q.multiplier(1) == 1);
+    assert(q2.multiplier(1) == 1);
 end
 
