@@ -224,7 +224,15 @@ classdef Q
 
             if length(obj.vars) == 1 && length(regexp(obj.vars{1}, 'x\d+', 'match')) == 1
                 % If there's a single variable and it matches the pattern "x<number>"
-                vars = {['!', obj.vars{1}]}; % Prepend "!" to the variable
+                % add a ! if it does not yet exist, otherwise remove the !
+                numNot = length(regexp(obj.vars{1}, '!', 'match'));
+                if numNot == 0
+                    vars = {['!', obj.vars{1}]}; % Prepend "!" to the variable
+                elseif numNot == 1
+                    vars = regexprep(obj.vars{1}, '!', '');  % Remove "!" from the variable
+                else
+                    error("Invalid transmission condition.");
+                end
                 result = Q(vars, obj.multiplier(1));
             else
                 % General case
