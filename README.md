@@ -1,5 +1,5 @@
 
-# TransmissionChannelAnalysis.jl
+# Matlab Toolbox for Transmission Channel Analysis
 
 The **MATLAB Toolbox for Transmission Channel Analysis** provides a suite of functions for conducting transmission channel analysis (TCA) in MATLAB. It includes both standard methods—which are sufficient for most users—and more advanced, customisable techniques.
 
