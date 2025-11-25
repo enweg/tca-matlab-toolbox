@@ -142,6 +142,11 @@ classdef DSGE < handle & Model
             end
 
             [A, B, C, D] = DSGE.getABCD_(M_, oo_, options_);
+            % Note that this state-space form still allows for shocks that have
+            % non-unity variance. Since we work with shocks that have unity
+            % variance, we need to renormalise the Phi0 matrices below using the
+            % sqrt of the shock covariance matrix
+            S = sqrt(DSGE.getShockVariances_(M_));
 
             % Basic assumption is that D is invertible.
             condTolerance = 1e-20;
@@ -163,6 +168,7 @@ classdef DSGE < handle & Model
                 CInv = inv(C);
                 DInv = inv(D);
                 Phi0 = D;
+                Phi0 = Phi0 * S;  % re-normlising shock variances
                 As = {C*A*CInv};
                 Psis = {C*(B - A*CInv*D)*DInv};
                 return;
@@ -215,6 +221,7 @@ classdef DSGE < handle & Model
             As = cell(1, kappa+1);
             Phi0 = ThetaPlus * FPlus * G{1};
             A0 = inv(Phi0);
+            Phi0 = Phi0 * S;  % re-normalising shock variances
             for k=1:kappa
                 colStart = (k-1)*n + 1;
                 colEnd = k*n;
@@ -542,13 +549,6 @@ classdef DSGE < handle & Model
             %   See also `coeffs`, `dynareToVarma_`, `varmaIrfs_`
             [Phi0, As, Psis] = obj.coeffs();
             irfs = DSGE.varmaIrfs_(Phi0, As, Psis, maxHorizon);
-            % Adjusting all IRFs for the shock sizes
-            shockNames = obj.getShockNames();
-            for i = 1:length(shockNames)
-                shockSize = obj.getShockSize(shockNames(i));
-                irfs(:, i, :) = irfs(:, i, :) * shockSize;
-            end
-
             varnames = obj.getVariableNames();
             irfObj = IRFContainer(irfs, varnames, obj);
         end
@@ -591,10 +591,9 @@ classdef DSGE < handle & Model
             end
 
             orderIdx = obj.vars2idx_(order);
-            shockSize = obj.getShockSize(shock);
             [Phi0, As, Psis, p, q] = DSGE.dynareToVarma_(obj.M_, obj.oo_, obj.options_);
             [B, Omega] = makeSystemsForm(Phi0, As, Psis, orderIdx, maxHorizon);
-            effects = transmission(shockIdx, B, Omega, condition, "BOmega", orderIdx) * shockSize;
+            effects = transmission(shockIdx, B, Omega, condition, "BOmega", orderIdx);
         end
 
     end
