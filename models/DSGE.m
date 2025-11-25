@@ -35,13 +35,13 @@ classdef DSGE < handle & Model
                 if exist("kalman_transition_matrix", "file") == 2
                     % Older versions of Dynare have the function in the root directory.
                     % The function is therefore loaded as soon as base Dynare is loaded.
-                    return; 
+                    return;
                 end
 
-                % Newer versions of Dynare include the file as part of the 
-                % stochastic_solver subdirectory. The function is thus no-longer loaded 
-                % as soon as Dynare itself is added to the path. We must add 
-                % stochastic_solver manually to the path. 
+                % Newer versions of Dynare include the file as part of the
+                % stochastic_solver subdirectory. The function is thus no-longer loaded
+                % as soon as Dynare itself is added to the path. We must add
+                % stochastic_solver manually to the path.
 
                 pathStochasticSolver = fullfile(pathDynare, 'stochastic_solver');
 
@@ -113,17 +113,17 @@ classdef DSGE < handle & Model
             %   - `q` (integer): Determined moving average order.
             %
             %   ## Methodology
-            %   The function follows the approach outlined in Morris (2016) 
-            %   and returns a VARMA of the form: 
+            %   The function follows the approach outlined in Morris (2016)
+            %   and returns a VARMA of the form:
             %   $$
             %   y_t = \sum_{i=1}^{p} A_i y_{t-i} + \sum_{j=1}^{q} \Psi_j u_{t-j} + u_t,
             %   $$
             %   where:
-            %   - $u_t = \Phi_0 \varepsilon_t$, with $\varepsilon_t$ 
+            %   - $u_t = \Phi_0 \varepsilon_t$, with $\varepsilon_t$
             %     being structural shocks.
             %
             %   ## Reference
-            %   - Morris, S. D. (2016). "VARMA representation of DSGE models." 
+            %   - Morris, S. D. (2016). "VARMA representation of DSGE models."
             %     *Economics Letters*, 138, 30–33.
             %     [https://doi.org/10.1016/j.econlet.2015.11.027](https://doi.org/10.1016/j.econlet.2015.11.027)
             %
@@ -136,25 +136,30 @@ classdef DSGE < handle & Model
                 error("dynareToVarma: No observed variables were defined in the mod file.")
             end
 
-            % Default choice for maximum VAR order following notation in Morris 2016. 
+            % Default choice for maximum VAR order following notation in Morris 2016.
             if nargin==3
                 maxKappa = 20;
             end
 
             [A, B, C, D] = DSGE.getABCD_(M_, oo_, options_);
+            % Note that this state-space form still allows for shocks that have
+            % non-unity variance. Since we work with shocks that have unity
+            % variance, we need to renormalise the Phi0 matrices below using the
+            % sqrt of the shock covariance matrix
+            S = sqrt(DSGE.getShockVariances_(M_));
 
-            % Basic assumption is that D is invertible. 
+            % Basic assumption is that D is invertible.
             condTolerance = 1e-20;
             if rcond(D) < condTolerance
                 error("Matrix D must not be singular.")
             end
 
-            n = size(C, 1); 
+            n = size(C, 1);
             m = size(A, 1);
 
-            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             % Case I: C is invertible. In that case, p=q=1;
-            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             if n==m && rcond(C) > condTolerance
                 p = 1;
                 q = 1;
@@ -163,18 +168,19 @@ classdef DSGE < handle & Model
                 CInv = inv(C);
                 DInv = inv(D);
                 Phi0 = D;
+                Phi0 = Phi0 * S;  % re-normlising shock variances
                 As = {C*A*CInv};
                 Psis = {C*(B - A*CInv*D)*DInv};
                 return;
             end
 
-            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             % Case II: Follow the general proposition of Morris 2016
             % but adjusted for our notation.
-            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             kappa = 0;
             F = [C];
-            while kappa < maxKappa 
+            while kappa < maxKappa
                 kappa = kappa + 1;
                 F = [C*A^kappa; F];
                 if rank(F) == size(F, 2)
@@ -214,7 +220,8 @@ classdef DSGE < handle & Model
 
             As = cell(1, kappa+1);
             Phi0 = ThetaPlus * FPlus * G{1};
-            A0 = inv(Phi0);  
+            A0 = inv(Phi0);
+            Phi0 = Phi0 * S;  % re-normalising shock variances
             for k=1:kappa
                 colStart = (k-1)*n + 1;
                 colEnd = k*n;
@@ -225,7 +232,7 @@ classdef DSGE < handle & Model
             As{end} = ThetaPlus * A * FPlus(:, colStart:colEnd);
 
             Psis = cell(1, kappa+1);
-            for k=1:kappa 
+            for k=1:kappa
                 Psis{k} = ThetaPlus * (FPlus * G{k+1} - A * FPlus * G{k}) * A0;
             end
             Psis{end} = ThetaPlus * (B - A * FPlus * G{kappa+1}) * A0;
@@ -235,44 +242,44 @@ classdef DSGE < handle & Model
             % `getABCD_` Obtain the ABCD state-space representation of a DSGE model.
             %
             %   `[A, B, C, D] = getABCD_(M_, oo_, options_)` computes the state-space
-            %   representation 
+            %   representation
             %   $$
             %   \begin{split}
-            %   x_t &= Ax_{t-1} + B\varepsilon_t \\ 
+            %   x_t &= Ax_{t-1} + B\varepsilon_t \\
             %   y_t &= Cx_{t-1} + D\varepsilon_t
             %   \end{split}
-            %   of a DSGE model estimated using Dynare. Only the minimal state 
-            %   representation is returned. 
+            %   of a DSGE model estimated using Dynare. Only the minimal state
+            %   representation is returned.
             %
             %   ## Arguments
-            %   - `M_` (struct): Returned by Dynare. 
-            %   - `oo_` (struct): Returned by Dynare. 
-            %   - `options_` (struct): Returned by Dynare. 
+            %   - `M_` (struct): Returned by Dynare.
+            %   - `oo_` (struct): Returned by Dynare.
+            %   - `options_` (struct): Returned by Dynare.
             %
             %   ## Returns
             %   - `A` (matrix): State transition matrix. See above equation.
-            %   - `B` (matrix): Control input matrix capturing exogenous shocks. 
+            %   - `B` (matrix): Control input matrix capturing exogenous shocks.
             %     See above equation.
-            %   - `C` (matrix): Observation matrix mapping state variables to 
+            %   - `C` (matrix): Observation matrix mapping state variables to
             %     observed variables. See above equation.
             %   - `D` (matrix): Observation noise matrix. See above equation.
             %
             %   ## Notes
-            %   - Requires MATLAB's Control System Toolbox. 
+            %   - Requires MATLAB's Control System Toolbox.
             %
 
             if ~isfield(options_,'varobs_id')
                 warning('getABCD: No observables have been defined using the varobs-command.')
-                return;    
+                return;
             end
 
-            % Dynare re-orders variables into the order static, backward, mixed, forward. 
-            % The state variables are the backward and mixed variables. 
-            % Thus, in the DR (internal order) ordering, the state variables are given by 
+            % Dynare re-orders variables into the order static, backward, mixed, forward.
+            % The state variables are the backward and mixed variables.
+            % Thus, in the DR (internal order) ordering, the state variables are given by
             % the following indices, where nspred is the number of state variables.
             ipred = M_.nstatic+(1:M_.nspred)';
             % options_.varobs_id is in declaration order. Need to change this to internal DR
-            % order for ABCD matrices. 
+            % order for ABCD matrices.
             obs_var=oo_.dr.inv_order_var(options_.varobs_id);
 
             % get state transition matrices
@@ -297,11 +304,11 @@ classdef DSGE < handle & Model
             % `getShockSize_` Obtain the standard deviation of a specified shock.
             %
             %   `shockSize = getShockSize_(shockName, M_)` computes the standard
-            %   deviation (size) of a specified shock in a DSGE model 
+            %   deviation (size) of a specified shock in a DSGE model
             %   estimated using Dynare.
             %
             %   ## Arguments
-            %   - `shockName` (string): The name of the shock whose size and 
+            %   - `shockName` (string): The name of the shock whose size and
             %     index are required.
             %   - `M_` (struct): Returned by Dynare.
             %
@@ -313,18 +320,48 @@ classdef DSGE < handle & Model
             shockSize = sqrt(M_.Sigma_e(idx, idx));
         end
 
+        function SigmaShock = getShockVariances_(M_)
+            % `getShockVariances_` Obtain the covariance matrix
+            % of structural shocks.
+            %
+            %   `SigmaShock = getShockVariances_(M_)` returns the
+            %   covariance matrix of the structural shocks in a
+            %   DSGE model estimated using Dynare. This function
+            %   additionally enforces that the shock covariance
+            %   matrix is diagonal. Models with correlated shocks
+            %   (non-diagonal covariance) are not supported.
+            %
+            %   ## Arguments
+            %   - `M_` (struct): Model structure returned by
+            %     Dynare. Must contain the field `Sigma_e`,
+            %     representing the covariance matrix of shocks.
+            %
+            %   ## Returns
+            %   - `SigmaShock` (matrix): Covariance matrix of the
+            %     model’s structural shocks as given in
+            %     `M_.Sigma_e`, provided it is diagonal.
+            %
+
+            SigmaShock = M_.Sigma_e;
+
+            % Ensure shock covariance matrix is diagonal
+            if ~isequal(SigmaShock, diag(diag(SigmaShock)))
+                error(['Non-diagonal shock covariance matrices are not currently supported.']);
+            end
+        end
+
         function idx = getVariableIdx_(varname, options_)
             varnames = DSGE.dynareCellArrayToVec_(options_.varobs);
             idx = find(varnames == varname);
         end
 
         function irfs = varmaIrfs_(Phi0, As, Psis, horizon)
-            % `varmaIrfs_` Compute structural impulse response functions (IRFs) 
+            % `varmaIrfs_` Compute structural impulse response functions (IRFs)
             % for a VARMA model.
             %
-            %   `irfs = varmaIrfs_(Phi0, As, Psis, horizon)` computes the 
-            %   structural impulse response functions (IRFs) of a VARMA model, 
-            %   given the structural shock impact matrix, autoregressive (AR) 
+            %   `irfs = varmaIrfs_(Phi0, As, Psis, horizon)` computes the
+            %   structural impulse response functions (IRFs) of a VARMA model,
+            %   given the structural shock impact matrix, autoregressive (AR)
             %   coefficients, and moving average (MA) coefficients.
             %
             %   ## Model Specification
@@ -333,25 +370,25 @@ classdef DSGE < handle & Model
             %   y_t = \sum_{i=1}^{p} A_i y_{t-i} + \sum_{j=1}^{q} \Psi_j u_{t-j} + u_t,
             %   $$
             %   where:
-            %   - $u_t = \Phi_0 \varepsilon_t$, with $\varepsilon_t$ being 
+            %   - $u_t = \Phi_0 \varepsilon_t$, with $\varepsilon_t$ being
             %     structural shocks.
             %
             %   ## Arguments
-            %   - `Phi0` (matrix): Impact matrix linking structural shocks to 
+            %   - `Phi0` (matrix): Impact matrix linking structural shocks to
             %     reduced-form errors.
-            %   - `As` (cell array): AR coefficient matrices 
+            %   - `As` (cell array): AR coefficient matrices
             %     `{A_1, A_2, ..., A_p}`.
-            %   - `Psis` (cell array): MA coefficient matrices 
+            %   - `Psis` (cell array): MA coefficient matrices
             %     `{Psi_1, Psi_2, ..., Psi_q}`.
-            %   - `horizon` (integer): Number of periods for which IRFs are 
-            %     computed. `horizon=0` means only contemporaneous impulses are 
+            %   - `horizon` (integer): Number of periods for which IRFs are
+            %     computed. `horizon=0` means only contemporaneous impulses are
             %     computed which are the same as `Phi0`.
             %
             %   ## Returns
-            %   - `irfs` (3D array): Structural IRFs of size `(n, m, horizon+1)`, 
-            %     where `n` is the number of endogenous variables, `m` is the 
-            %     number of shocks, assumed to satisfy `m=n`. The IRFs capture 
-            %     the dynamic response of each variable to a unit shock over 
+            %   - `irfs` (3D array): Structural IRFs of size `(n, m, horizon+1)`,
+            %     where `n` is the number of endogenous variables, `m` is the
+            %     number of shocks, assumed to satisfy `m=n`. The IRFs capture
+            %     the dynamic response of each variable to a unit shock over
             %     the specified horizon.
             %
 
@@ -377,8 +414,8 @@ classdef DSGE < handle & Model
     methods
 
         function obj = DSGE(M_, options_, oo_)
-            obj.M_ = M_; 
-            obj.options_ = options_; 
+            obj.M_ = M_;
+            obj.options_ = options_;
             obj.oo_ = oo_;
         end
 
@@ -456,7 +493,7 @@ classdef DSGE < handle & Model
         end
 
         function shocks = getShockNames(obj)
-            % `getShockNames` returns a vector of shock names. 
+            % `getShockNames` returns a vector of shock names.
             shocks = DSGE.dynareCellArrayToVec_(obj.M_.exo_names);
         end
 
@@ -512,13 +549,6 @@ classdef DSGE < handle & Model
             %   See also `coeffs`, `dynareToVarma_`, `varmaIrfs_`
             [Phi0, As, Psis] = obj.coeffs();
             irfs = DSGE.varmaIrfs_(Phi0, As, Psis, maxHorizon);
-            % Adjusting all IRFs for the shock sizes
-            shockNames = obj.getShockNames();
-            for i = 1:length(shockNames)
-                shockSize = obj.getShockSize(shockNames(i));
-                irfs(:, i, :) = irfs(:, i, :) * shockSize;
-            end
-
             varnames = obj.getVariableNames();
             irfObj = IRFContainer(irfs, varnames, obj);
         end
@@ -553,18 +583,17 @@ classdef DSGE < handle & Model
             if ~isa(condition, 'Q')
                 error("The provided transmission condition is not valid.")
             end
-            
-            shockIdx = shock; 
+
+            shockIdx = shock;
             if ischar(shock)
                 shockNames = obj.getShockNames();
                 shockIdx = find(cellfun(@(c) isequal(c, shock), shockNames), 1, 'first');
             end
 
             orderIdx = obj.vars2idx_(order);
-            shockSize = obj.getShockSize(shock);
             [Phi0, As, Psis, p, q] = DSGE.dynareToVarma_(obj.M_, obj.oo_, obj.options_);
             [B, Omega] = makeSystemsForm(Phi0, As, Psis, orderIdx, maxHorizon);
-            effects = transmission(shockIdx, B, Omega, condition, "BOmega", orderIdx) * shockSize;
+            effects = transmission(shockIdx, B, Omega, condition, "BOmega", orderIdx);
         end
 
     end

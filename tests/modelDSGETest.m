@@ -13,7 +13,7 @@ function testDSGEVarmaSW2007(testCase)
     % Dynamically create variables
     for i = 1:numel(names)
         % Assign in the current function workspace
-        eval([names{i} ' = transpose(vars{i});']); 
+        eval([names{i} ' = transpose(vars{i});']);
     end
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % END SETTING UP THE TEST
@@ -81,7 +81,7 @@ function testDSGEVarmaGali2015(testCase)
     % Dynamically create variables
     for i = 1:numel(names)
         % Assign in the current function workspace
-        eval([names{i} ' = transpose(vars{i});']); 
+        eval([names{i} ' = transpose(vars{i});']);
     end
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % END SETTING UP THE TEST
@@ -115,8 +115,8 @@ function testDSGEVarmaGali2015(testCase)
 end
 
 function testDSGETransmission(testCase)
-    % THESE TESTS ARE ONLY IMPLEMENTATION TESTS. THE UNDERLYING FUNCTIONS 
-    % HAVE BEEN TESTED ELSEWHERE. 
+    % THESE TESTS ARE ONLY IMPLEMENTATION TESTS. THE UNDERLYING FUNCTIONS
+    % HAVE BEEN TESTED ELSEWHERE.
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % SW2007
@@ -129,11 +129,11 @@ function testDSGETransmission(testCase)
     q = ~model.notThrough('dw', 0:maxHorizon, order);
     shock = 'em';
     effects = model.transmission(shock, q, order, maxHorizon);
-    effects(4, :, :)
+    % effects(4, :, :)
 
     order = {'robs', 'dy', 'dc', 'dinve', 'labobs', 'dw', 'pinfobs'};
     q = ~model.notThrough('dw', 0:maxHorizon, order);
     shock = 'em';
     effects = model.transmission(shock, q, order, maxHorizon);
-    effects(4, :, :)
+    % effects(4, :, :)
 end
