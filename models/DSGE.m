@@ -205,9 +205,45 @@ classdef DSGE < handle & Model
         end
 
         function [Phi0, As, Psis] = recoverVarmaMorris_(p, q, FPlus, A, B, C, D, S)
-            % Fplus as defined in Morris and in dynareToVarma_
-            % A, B, C, D define DSGE state space
-            % S diagonal matrix of shock standard deviations
+            % `recoverVarmaMorris_` Recover VARMA coefficients from Morris's construction.
+            %
+            %   `[Phi0, As, Psis] = recoverVarmaMorris_(p, q, FPlus, A, B, C, D, S)`
+            %   computes the VARMA coefficient matrices once `dynareToVarma_`
+            %   has established the rank conditions and constructed the matrix
+            %   `FPlus` used in the general case of Morris (2016).
+            %
+            %   ## Arguments
+            %   - `p` (integer): Autoregressive order determined in `dynareToVarma_`.
+            %   - `q` (integer): Moving-average order determined in
+            %     `dynareToVarma_`.
+            %   - `FPlus` (matrix): Pseudoinverse of the stacked observability
+            %     matrix `F` constructed in `dynareToVarma_`.
+            %   - `A` (matrix): State transition matrix from the DSGE
+            %     state-space representation.
+            %   - `B` (matrix): Shock loading matrix from the DSGE state-space
+            %     representation.
+            %   - `C` (matrix): Observation matrix from the DSGE state-space
+            %     representation.
+            %   - `D` (matrix): Contemporaneous shock impact matrix from the
+            %     DSGE state-space representation.
+            %   - `S` (matrix): Diagonal matrix of shock standard deviations
+            %     used to re-scale shocks to their original variance.
+            %
+            %   ## Returns
+            %   - `Phi0` (matrix): Contemporaneous impact matrix in the
+            %     recovered VARMA representation.
+            %   - `As` (cell array): AR coefficient matrices `{A_1, ..., A_p}`.
+            %   - `Psis` (cell array): MA coefficient matrices
+            %     `{Psi_1, ..., Psi_q}`.
+            %
+            %   ## Notes
+            %   - This helper is used by `dynareToVarma_` only in the general
+            %     case where the observation matrix `C` is not square and
+            %     invertible.
+            %   - The function assumes the relevant rank conditions for `F`
+            %     and `FPlus(:, 1:n)` have already been checked.
+            %
+            %   See also `dynareToVarma_`, `getABCD_`
 
             n = size(C, 1);
             m = size(A, 1);
