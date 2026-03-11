@@ -201,12 +201,22 @@ classdef DSGE < handle & Model
             q = kappa + 1;
 
             % Finding VARMA Coefficients
-            Theta = FPlus(:, 1:n);
-            ThetaPlus = pinv(Theta);  % Checked rank conditions above.
+            [Phi0, As, Psis] = DSGE.recoverVarmaMorris_(p, q, FPlus, A, B, C, D, S);
+        end
 
-            G = cell(1, kappa+1);
-            for col=1:(kappa+1)
-                Gcol = zeros(n*(kappa+1), n);
+        function [Phi0, As, Psis] = recoverVarmaMorris_(p, q, FPlus, A, B, C, D, S)
+            % Fplus as defined in Morris and in dynareToVarma_
+            % A, B, C, D define DSGE state space
+            % S diagonal matrix of shock standard deviations
+
+            n = size(C, 1);
+            m = size(A, 1);
+            Theta = FPlus(:, 1:n);
+            ThetaPlus = pinv(Theta);  % Assume rank condition has been checked
+
+            G = cell(1, p);
+            for col=1:(p)
+                Gcol = zeros(n*(p), n);
                 for row=1:(col-1)
                     rowStart = (row-1)*n+1;
                     rowEnd = row*n;
@@ -218,24 +228,24 @@ classdef DSGE < handle & Model
                 G{col} = Gcol;
             end
 
-            As = cell(1, kappa+1);
+            As = cell(1, p);
             Phi0 = ThetaPlus * FPlus * G{1};
             A0 = inv(Phi0);
             Phi0 = Phi0 * S;  % re-normalising shock variances
-            for k=1:kappa
+            for k=1:(p-1)
                 colStart = (k-1)*n + 1;
                 colEnd = k*n;
                 As{k} = ThetaPlus * (A*FPlus(:, colStart:colEnd) - FPlus(:, (colStart+n):(colEnd+n)));
             end
-            colStart = (kappa+1-1)*n + 1;
-            colEnd = (kappa+1)*n;
+            colStart = (p-1)*n + 1;
+            colEnd = (p)*n;
             As{end} = ThetaPlus * A * FPlus(:, colStart:colEnd);
 
-            Psis = cell(1, kappa+1);
-            for k=1:kappa
+            Psis = cell(1, p);
+            for k=1:(p-1)
                 Psis{k} = ThetaPlus * (FPlus * G{k+1} - A * FPlus * G{k}) * A0;
             end
-            Psis{end} = ThetaPlus * (B - A * FPlus * G{kappa+1}) * A0;
+            Psis{end} = ThetaPlus * (B - A * FPlus * G{p}) * A0;
         end
 
         function [A, B, C, D] = getABCD_(M_, oo_, options_)
