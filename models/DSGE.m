@@ -455,6 +455,52 @@ classdef DSGE < handle & Model
             end
         end
 
+        function irfs = stateSpaceIrfs_(A, B, C, D, S, horizon)
+            % `stateSpaceIrfs_` Compute structural IRFs from a DSGE state-space system.
+            %
+            %   `irfs = stateSpaceIrfs_(A, B, C, D, S, horizon)` computes
+            %   impulse response functions from the state-space representation
+            %   returned by `getABCD_`:
+            %   $$
+            %   \begin{split}
+            %   x_t &= Ax_{t-1} + B\varepsilon_t \\
+            %   y_t &= Cx_{t-1} + D\varepsilon_t
+            %   \end{split}
+            %   $$
+            %   where the shocks are scaled by `S` so that the responses match
+            %   Dynare's convention of one-standard-deviation structural shocks.
+            %
+            %   ## Arguments
+            %   - `A` (matrix): State transition matrix.
+            %   - `B` (matrix): Shock loading matrix in the state equation.
+            %   - `C` (matrix): Observation matrix.
+            %   - `D` (matrix): Contemporaneous shock impact matrix.
+            %   - `S` (matrix): Diagonal matrix of shock standard deviations.
+            %   - `horizon` (integer): Maximum IRF horizon. `horizon=0`
+            %     returns only the contemporaneous impact.
+            %
+            %   ## Returns
+            %   - `irfs` (3D array): Structural IRFs of size
+            %     `(n_observables, n_shocks, horizon+1)`.
+            %
+            %   ## Notes
+            %   - Horizon 0 equals `D*S`.
+            %   - For `h >= 1`, the response is `C*A^(h-1)*B*S`.
+            %
+            %   See also `getABCD_`, `varmaIrfs_`
+
+            nObs = size(C, 1);
+            nShocks = size(D, 2);
+            irfs = zeros(nObs, nShocks, horizon+1);
+            irfs(:, :, 1) = D * S;
+
+            stateResponse = B * S;
+            for h=1:horizon
+                irfs(:, :, h+1) = C * stateResponse;
+                stateResponse = A * stateResponse;
+            end
+        end
+
     end
 
     methods
@@ -580,7 +626,8 @@ classdef DSGE < handle & Model
             % `IRF` Compute impulse response functions for DSGE model.
             %
             %   `irfObj = IRF(obj, maxHorizon)` computes IRFs of the DSGE
-            %   model up to horizon `maxHorizon`.
+            %   model up to horizon `maxHorizon`. Uses the VARMA representation
+            %   of the DSGE.
             %
             %   ## Arguments
             %   - `obj` (DSGE): DSGE model object.
@@ -595,6 +642,34 @@ classdef DSGE < handle & Model
             %   See also `coeffs`, `dynareToVarma_`, `varmaIrfs_`
             [Phi0, As, Psis] = obj.coeffs();
             irfs = DSGE.varmaIrfs_(Phi0, As, Psis, maxHorizon);
+            varnames = obj.getVariableNames();
+            irfObj = IRFContainer(irfs, varnames, obj);
+        end
+
+        function irfObj = IRFStateSpace(obj, maxHorizon)
+            % `IRFStateSpace` Compute impulse response functions from the DSGE state-space form.
+            %
+            %   `irfObj = IRFStateSpace(obj, maxHorizon)` computes IRFs of the
+            %   DSGE model directly from the state-space representation
+            %   obtained via `getABCD_`.
+            %
+            %   ## Arguments
+            %   - `obj` (DSGE): DSGE model object.
+            %   - `maxHorizon` (integer): Maximum forecast horizon.
+            %
+            %   ## Returns
+            %   - `irfObj` (IRFContainer): Container with computed IRFs.
+            %
+            %   ## Notes
+            %   - Structural shocks are scaled by their standard deviations so
+            %     that the returned IRFs match Dynare output.
+            %   - The resulting IRFs are equivalent to those obtained from the
+            %     VARMA representation used by `IRF`.
+            %
+            %   See also `IRF`, `getABCD_`, `varmaIrfs_`
+            [A, B, C, D] = DSGE.getABCD_(obj.M_, obj.oo_, obj.options_);
+            S = sqrt(DSGE.getShockVariances_(obj.M_));
+            irfs = DSGE.stateSpaceIrfs_(A, B, C, D, S, maxHorizon);
             varnames = obj.getVariableNames();
             irfObj = IRFContainer(irfs, varnames, obj);
         end

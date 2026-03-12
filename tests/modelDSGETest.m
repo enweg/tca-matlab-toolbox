@@ -70,6 +70,19 @@ function testDSGEVarmaSW2007(testCase)
     assert(testew < tol);
 end
 
+function testDSGEStateSpaceSW2007(testCase)
+    load ./tests/SW2007/SW2007/Output/SW2007_results.mat
+    model = DSGE(M_, options_, oo_);
+    maxHorizon = 19;
+    irfsStateSpace = model.IRFStateSpace(maxHorizon).irfs;
+    irfsVarma = model.IRF(maxHorizon).irfs;
+    irfsDynare = getDynareObservedIrfs(model, oo_, maxHorizon);
+
+    tol = 1e-9;
+    assert(max(vec(abs(irfsStateSpace - irfsVarma))) < tol);
+    assert(max(vec(abs(irfsStateSpace - irfsDynare))) < tol);
+end
+
 function testDSGEVarmaGali2015(testCase)
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % SETTING UP THE TEST
@@ -114,6 +127,19 @@ function testDSGEVarmaGali2015(testCase)
     assert(testeps_a < tol);
 end
 
+function testDSGEStateSpaceGali2015(testCase)
+    load ./tests/Gali2015/Gali2015Chapter3/Output/Gali2015Chapter3_results.mat
+    model = DSGE(M_, options_, oo_);
+    maxHorizon = 19;
+    irfsStateSpace = model.IRFStateSpace(maxHorizon).irfs;
+    irfsVarma = model.IRF(maxHorizon).irfs;
+    irfsDynare = getDynareObservedIrfs(model, oo_, maxHorizon);
+
+    tol = 1e-9;
+    assert(max(vec(abs(irfsStateSpace - irfsVarma))) < tol);
+    assert(max(vec(abs(irfsStateSpace - irfsDynare))) < tol);
+end
+
 function testDSGETransmission(testCase)
     % THESE TESTS ARE ONLY IMPLEMENTATION TESTS. THE UNDERLYING FUNCTIONS
     % HAVE BEEN TESTED ELSEWHERE.
@@ -136,4 +162,20 @@ function testDSGETransmission(testCase)
     shock = 'em';
     effects = model.transmission(shock, q, order, maxHorizon);
     % effects(4, :, :)
+end
+
+function irfsDynare = getDynareObservedIrfs(model, oo_, maxHorizon)
+    varnames = model.getVariableNames();
+    shocknames = model.getShockNames();
+    nVars = length(varnames);
+    nShocks = length(shocknames);
+    irfsDynare = zeros(nVars, nShocks, maxHorizon+1);
+
+    for iVar = 1:nVars
+        for iShock = 1:nShocks
+            fieldName = sprintf('%s_%s', char(varnames(iVar)), char(shocknames(iShock)));
+            series = oo_.irfs.(fieldName);
+            irfsDynare(iVar, iShock, :) = reshape(series(1:(maxHorizon+1)), 1, 1, []);
+        end
+    end
 end
