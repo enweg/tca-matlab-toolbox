@@ -91,10 +91,10 @@ classdef DSGE < handle & Model
           v = v(:);
         end
 
-        function [Phi0, As, Psis, p, q] = dynareToVarma_(M_, oo_, options_, maxKappa)
+        function [Phi0, As, Psis, p, q] = dynareToVarma_(M_, oo_, options_, pMax)
             % `dynareToVarma_` Transform a DSGE model into VARMA representation.
             %
-            %   `[Phi0, As, Psis, p, q] = dynareToVarma_(M_, oo_, options_, maxKappa)`
+            %   `[Phi0, As, Psis, p, q] = dynareToVarma_(M_, oo_, options_, pMax)`
             %   converts a linearized DSGE model estimated using Dynare into a
             %   VARMA form, following the method of Morris (2016).
             %
@@ -102,8 +102,7 @@ classdef DSGE < handle & Model
             %   - `M_` (struct): Model structure returned by Dynare.
             %   - `oo_` (struct): Output structure returned by Dynare.
             %   - `options_` (struct): Options structure returned by Dynare.
-            %   - `maxKappa` (integer, optional): Tuning parameter related to
-            %     maximum AR order via `maxArOrder = maxKappa + 1`. Defaults to 20.
+            %   - `pMax` (integer, optional): Maximum AR order to try. 
             %
             %   ## Returns
             %   - `Phi0` (matrix): Impact matrix linking shocks to reduced-form errors.
@@ -136,23 +135,27 @@ classdef DSGE < handle & Model
                 error("dynareToVarma: No observed variables were defined in the mod file.")
             end
 
-            % Default choice for maximum VAR order following notation in Morris 2016.
+            % Default choice for maximum VAR order
             if nargin==3
-                maxKappa = 20;
+                pMax = 20;
             end
 
             [A, B, C, D] = DSGE.getABCD_(M_, oo_, options_);
             % Note that this state-space form still allows for shocks that have
             % non-unity variance. Since we work with shocks that have unity
-            % variance, we need to renormalise the Phi0 matrices below using the
-            % sqrt of the shock covariance matrix
+            % variance, we change below the shock related matrices B and D. 
             S = sqrt(DSGE.getShockVariances_(M_));
+            % B = B*S;
+            % D = D*S;
 
             % Basic assumption is that D is invertible.
-            condTolerance = 1e-20;
-            if rcond(D) < condTolerance
-                error("Matrix D must not be singular.")
+            if size(D, 1) ~= size(D, 2)
+                error("Matrix D must be square")
             end
+            if rank(D) ~= size(D, 1)
+                error("Matrix D must not be singular")
+            end
+            Phi0 = D*S;
 
             n = size(C, 1);
             m = size(A, 1);
@@ -160,128 +163,69 @@ classdef DSGE < handle & Model
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             % Case I: C is invertible. In that case, p=q=1;
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            if n==m && rcond(C) > condTolerance
+            if n==m && rank(C) == n
                 p = 1;
                 q = 1;
 
                 % Finding AR, MA matrices
                 CInv = inv(C);
                 DInv = inv(D);
-                Phi0 = D;
-                Phi0 = Phi0 * S;  % re-normlising shock variances
                 As = {C*A*CInv};
                 Psis = {C*(B - A*CInv*D)*DInv};
                 return;
             end
 
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            % Case II: Follow the general proposition of Morris 2016
-            % but adjusted for our notation.
+            % Case II: Follow the general proposition of Morris 2016.
+            % Algorithm was slightly adjusted for better implementation.  
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            kappa = 0;
-            F = [C];
-            while kappa < maxKappa
-                kappa = kappa + 1;
-                F = [C*A^kappa; F];
-                if rank(F) == size(F, 2)
-                    FPlus = pinv(F);  % Checked rank condition above.
-                    if rank(FPlus(:, 1:n)) == n
-                        break  % Both rank conditions are satisfied.
-                    end
+            % Finding smallest M for which F matrix is full column rank. 
+            % If F is full column rank for M, then VARMA has AR order M+1. 
+            % Thus, our search cannot exceed pMax-1.
+            B = B * inv(D);
+            F = zeros(0, n);
+            p = missing;
+            for M = 0:(pMax-1)
+                F = [C*A^M; F];
+                if rank(F) == m
+                    p = M + 1;
+                    break;
                 end
             end
-            if rank(F) ~= size(F, 2)
-                error("dynareToVarma: Rank condition for F is not satisfied. Could not find VARMA representation of DSGE.")
+
+            if ismissing(p)
+                error("Could not find VARMA with p <= %i", pMax)
             end
-            FPlus = pinv(F);  % Checked rank condition above
-            if rank(FPlus(:, 1:n)) ~= n
-                error("dynareToVarma: Rank condition for FPlus is not satisfied. Could not find VARMA representation of DSGE.")
+            q = p;
+
+            FPlus = pinv(F);
+
+            % Recovering AR coefficients
+            Bcoeffs = F * A * FPlus;
+            Bcoeffs = Bcoeffs(1:n, :);
+            As = VAR.coeffsToCellArray_(Bcoeffs);
+
+            % Constructing G matrix to recover MA coefficients
+            GFirstRow = eye(n);
+            for M = 0:(q-2)
+                tmp = C * A^M * B;
+                GFirstRow = [GFirstRow tmp];
             end
-            p = kappa + 1;
-            q = kappa + 1;
-
-            % Finding VARMA Coefficients
-            [Phi0, As, Psis] = DSGE.recoverVarmaMorris_(p, q, FPlus, A, B, C, D, S);
-        end
-
-        function [Phi0, As, Psis] = recoverVarmaMorris_(p, q, FPlus, A, B, C, D, S)
-            % `recoverVarmaMorris_` Recover VARMA coefficients from Morris's construction.
-            %
-            %   `[Phi0, As, Psis] = recoverVarmaMorris_(p, q, FPlus, A, B, C, D, S)`
-            %   computes the VARMA coefficient matrices once `dynareToVarma_`
-            %   has established the rank conditions and constructed the matrix
-            %   `FPlus` used in the general case of Morris (2016).
-            %
-            %   ## Arguments
-            %   - `p` (integer): Autoregressive order determined in `dynareToVarma_`.
-            %   - `q` (integer): Moving-average order determined in
-            %     `dynareToVarma_`.
-            %   - `FPlus` (matrix): Pseudoinverse of the stacked observability
-            %     matrix `F` constructed in `dynareToVarma_`.
-            %   - `A` (matrix): State transition matrix from the DSGE
-            %     state-space representation.
-            %   - `B` (matrix): Shock loading matrix from the DSGE state-space
-            %     representation.
-            %   - `C` (matrix): Observation matrix from the DSGE state-space
-            %     representation.
-            %   - `D` (matrix): Contemporaneous shock impact matrix from the
-            %     DSGE state-space representation.
-            %   - `S` (matrix): Diagonal matrix of shock standard deviations
-            %     used to re-scale shocks to their original variance.
-            %
-            %   ## Returns
-            %   - `Phi0` (matrix): Contemporaneous impact matrix in the
-            %     recovered VARMA representation.
-            %   - `As` (cell array): AR coefficient matrices `{A_1, ..., A_p}`.
-            %   - `Psis` (cell array): MA coefficient matrices
-            %     `{Psi_1, ..., Psi_q}`.
-            %
-            %   ## Notes
-            %   - This helper is used by `dynareToVarma_` only in the general
-            %     case where the observation matrix `C` is not square and
-            %     invertible.
-            %   - The function assumes the relevant rank conditions for `F`
-            %     and `FPlus(:, 1:n)` have already been checked.
-            %
-            %   See also `dynareToVarma_`, `getABCD_`
-
-            n = size(C, 1);
-            m = size(A, 1);
-            Theta = FPlus(:, 1:n);
-            ThetaPlus = pinv(Theta);  % Assume rank condition has been checked
-
-            G = cell(1, p);
-            for col=1:(p)
-                Gcol = zeros(n*(p), n);
-                for row=1:(col-1)
-                    rowStart = (row-1)*n+1;
-                    rowEnd = row*n;
-                    Gcol(rowStart:rowEnd, :) = C*A^(col-row-1)*B;
-                end
-                rowStart = (col-1)*n+1;
-                rowEnd = col*n;
-                Gcol(rowStart:rowEnd, :) = D;
-                G{col} = Gcol;
+            G = zeros(n * q, n * q);
+            for i = 1:q
+                skip = (i - 1) * n;
+                r = (i - 1) * n + 1;
+                G(r:(r + n - 1), (skip + 1):end) = GFirstRow(:, 1:(end-skip));
             end
 
-            As = cell(1, p);
-            Phi0 = ThetaPlus * FPlus * G{1};
-            A0 = inv(Phi0);
-            Phi0 = Phi0 * S;  % re-normalising shock variances
-            for k=1:(p-1)
-                colStart = (k-1)*n + 1;
-                colEnd = k*n;
-                As{k} = ThetaPlus * (A*FPlus(:, colStart:colEnd) - FPlus(:, (colStart+n):(colEnd+n)));
-            end
-            colStart = (p-1)*n + 1;
-            colEnd = (p)*n;
-            As{end} = ThetaPlus * A * FPlus(:, colStart:colEnd);
-
-            Psis = cell(1, p);
-            for k=1:(p-1)
-                Psis{k} = ThetaPlus * (FPlus * G{k+1} - A * FPlus * G{k}) * A0;
-            end
-            Psis{end} = ThetaPlus * (B - A * FPlus * G{p}) * A0;
+            % Recovering MA coefficients
+            Psicoeffs = zeros(n, n * q);
+            Psicoeffs(:, 1:(end - n)) = G(1:n, (n + 1):end);
+            FAFPlusG = F * A * FPlus * G;
+            Psicoeffs = Psicoeffs - FAFPlusG(1:n, :);
+            FB = F * B;
+            Psicoeffs(:, (end - n + 1):end) = Psicoeffs(:, (end - n + 1):end) + FB(1:n, :);
+            Psis = VAR.coeffsToCellArray_(Psicoeffs);
         end
 
         function [A, B, C, D] = getABCD_(M_, oo_, options_)
