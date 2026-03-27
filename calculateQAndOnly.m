@@ -38,4 +38,6 @@ function effect = calculateQAndOnly(from, irfs, irfsOrtho, vars, multiplier)
     end
     
     effect = effect .* (irfsOrtho(:, vars(end)) / irfsOrtho(vars(end), vars(end)));
+    % preventing misinterpretation
+    effect(1:(max(vars) - 1)) = NaN; 
 end
