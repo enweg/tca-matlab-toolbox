@@ -321,3 +321,26 @@ function testTransmission9(testCase)
     assert(all(max(abs(effectIrfs - manualIrfs), [], 'all') < sqrt(eps())));
     assert(all(max(abs(effect - effectIrfs), [], 'all') < sqrt(eps())));
 end
+
+function testTransmission10(testCase)
+
+    B = jsondecode(fileread('./tests/simulated-svar-k3-p1/B.json'))';
+    Omega = jsondecode(fileread('./tests/simulated-svar-k3-p1/Omega.json'))';
+    irfs = jsondecode(fileread('./tests/simulated-svar-k3-p1/irfs.json'))';
+    irfsOrtho = jsondecode(fileread('./tests/simulated-svar-k3-p1/irfs_ortho.json'))';
+
+    % algorithms were created in the way that the variables in the condition 
+    % must be before the outcome variable. Technically, the outcome variable 
+    % could be the last variable involved in the condition. To prevent
+    % misinterpretation, we should therfore set the effects on all variables 
+    % except the highest one in the condition to NaN. Note that we should set 
+    % all values of variables involved in a NOT to NaN since these should 
+    % never be interpreted even if it is the outcome variable. 
+
+    cond = makeCondition("!x2"); 
+    effect = transmission(1, B, Omega, cond, "BOmega"); 
+    effectIrfs = transmission(1, irfs, irfsOrtho, cond, "irf"); 
+
+    assert(all(isnan(effect(1:2)))); 
+    assert(all(isnan(effectIrfs(1:2)))); 
+end

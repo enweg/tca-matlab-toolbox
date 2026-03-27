@@ -63,15 +63,9 @@ function effects = transmissionBOmega(from, B, Omega, varAnd, varNot, multiplier
         %     return;
         % end
         
-        if ~isempty(vAnd)
-            effects{ii}(1:(max(vAnd) - 1)) = NaN;
-        end
     end
 
     effects = sum(cat(2, effects{:}), 2);
-    if ~isempty(varAnd)
-        effects(1:(max(cat(2, varAnd{:})) - 1)) = NaN;
-    end
 
 end
 
