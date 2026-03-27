@@ -93,9 +93,11 @@ function effects = transmission(from, arr1, arr2, q, method, order)
         T = permmatrix(order);  % applying transpose inverses order
         k = length(order);
         horizon = size(effects, 1) / k;
+        orderInv = T' * (1:k)';
         effect_tensor = zeros(k, 1, horizon);
         for h = 1:horizon
-            effect_tensor(:, :, h) = T' * effects(((h-1)*k+1):(h*k));
+            tmp = effects(((h-1)*k+1):(h*k));
+            effect_tensor(:, :, h) = tmp(orderInv);
         end
         effects = effect_tensor;
     end
