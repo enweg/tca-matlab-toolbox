@@ -168,6 +168,35 @@ classdef VAR < handle & Model
             end
         end
 
+        function B = cellArrayToCoeffs_(BCellArray)
+            % `cellArrayToCoeffs_` Transform a cell array of coefficient matrices
+            % into a stacked coefficient matrix. 
+            %
+            %   `B = cellArrayToCoeffs_(BCellArray)` converts the cell array 
+            %   `{B1, B2, ..., Bp}` into the stacked coefficient matrix 
+            %   `[B1 B2 ... Bp]`. 
+            %
+            %   ## Arguments
+            %   - `BCellArray` (cell array): Cell array containing the coefficient
+            %     matrices.
+            %   
+            %   ## Returns
+            %   - `B` (matrix): Stacked coefficient matrix excluding
+            %     deterministic components (i.e., the matrix does not include
+            %     the constant or trans coefficients `C`). Size is `(k, k*p)`
+            %     where `k` is the number of variables and `p` is the lag order.
+            %
+            %   See also `DSGE.coeffsToCellArray_`.
+            p = size(BCellArray, 2);
+            k = size(BCellArray{1, 1}, 1);
+            B = zeros(k, k*p);
+            for i = 1:p
+                c = (i - 1) * k + 1;
+                B(:, c:(c + k - 1)) = BCellArray{1, i};
+            end
+        end
+
+
         function Y = simulate(errorsOrT, B, varargin)
             % `simulate` Simulate a VAR process given errors or time periods.
             %

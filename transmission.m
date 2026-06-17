@@ -88,14 +88,24 @@ function effects = transmission(from, arr1, arr2, q, method, order)
         error("Unrecognised method. Must be either BOmega or irf");
     end
 
+    % Effects that are before (including) the last NOT should not be interpreted
+    % and are set to NaN to prevent accidental interpretation. Similarly, 
+    % effects before (not including) the last AND should not be interpreted 
+    % and are set to NaN. 
+
+    effects(1:max(cat(2, varNot{:}))) = NaN; 
+    effects(1:(max(cat(2, varAnd{:})) - 1)) = NaN;
+
     if nargin == 6
         % The case when order has been defined
         T = permmatrix(order);  % applying transpose inverses order
         k = length(order);
         horizon = size(effects, 1) / k;
+        orderInv = T' * (1:k)';
         effect_tensor = zeros(k, 1, horizon);
         for h = 1:horizon
-            effect_tensor(:, :, h) = T' * effects(((h-1)*k+1):(h*k));
+            tmp = effects(((h-1)*k+1):(h*k));
+            effect_tensor(:, :, h) = tmp(orderInv);
         end
         effects = effect_tensor;
     end

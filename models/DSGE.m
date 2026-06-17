@@ -91,10 +91,10 @@ classdef DSGE < handle & Model
           v = v(:);
         end
 
-        function [Phi0, As, Psis, p, q] = dynareToVarma_(M_, oo_, options_, maxKappa)
+        function [Phi0, As, Psis, p, q] = dynareToVarma_(M_, oo_, options_, pMax)
             % `dynareToVarma_` Transform a DSGE model into VARMA representation.
             %
-            %   `[Phi0, As, Psis, p, q] = dynareToVarma_(M_, oo_, options_, maxKappa)`
+            %   `[Phi0, As, Psis, p, q] = dynareToVarma_(M_, oo_, options_, pMax)`
             %   converts a linearized DSGE model estimated using Dynare into a
             %   VARMA form, following the method of Morris (2016).
             %
@@ -102,8 +102,7 @@ classdef DSGE < handle & Model
             %   - `M_` (struct): Model structure returned by Dynare.
             %   - `oo_` (struct): Output structure returned by Dynare.
             %   - `options_` (struct): Options structure returned by Dynare.
-            %   - `maxKappa` (integer, optional): Tuning parameter related to
-            %     maximum AR order via `maxArOrder = maxKappa + 1`. Defaults to 20.
+            %   - `pMax` (integer, optional): Maximum AR order to try. 
             %
             %   ## Returns
             %   - `Phi0` (matrix): Impact matrix linking shocks to reduced-form errors.
@@ -136,23 +135,27 @@ classdef DSGE < handle & Model
                 error("dynareToVarma: No observed variables were defined in the mod file.")
             end
 
-            % Default choice for maximum VAR order following notation in Morris 2016.
+            % Default choice for maximum VAR order
             if nargin==3
-                maxKappa = 20;
+                pMax = 20;
             end
 
             [A, B, C, D] = DSGE.getABCD_(M_, oo_, options_);
             % Note that this state-space form still allows for shocks that have
             % non-unity variance. Since we work with shocks that have unity
-            % variance, we need to renormalise the Phi0 matrices below using the
-            % sqrt of the shock covariance matrix
+            % variance, we change below the shock related matrices B and D. 
             S = sqrt(DSGE.getShockVariances_(M_));
+            % B = B*S;
+            % D = D*S;
 
             % Basic assumption is that D is invertible.
-            condTolerance = 1e-20;
-            if rcond(D) < condTolerance
-                error("Matrix D must not be singular.")
+            if size(D, 1) ~= size(D, 2)
+                error("Matrix D must be square")
             end
+            if rank(D) ~= size(D, 1)
+                error("Matrix D must not be singular")
+            end
+            Phi0 = D*S;
 
             n = size(C, 1);
             m = size(A, 1);
@@ -160,82 +163,69 @@ classdef DSGE < handle & Model
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             % Case I: C is invertible. In that case, p=q=1;
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            if n==m && rcond(C) > condTolerance
+            if n==m && rank(C) == n
                 p = 1;
                 q = 1;
 
                 % Finding AR, MA matrices
                 CInv = inv(C);
                 DInv = inv(D);
-                Phi0 = D;
-                Phi0 = Phi0 * S;  % re-normlising shock variances
                 As = {C*A*CInv};
                 Psis = {C*(B - A*CInv*D)*DInv};
                 return;
             end
 
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            % Case II: Follow the general proposition of Morris 2016
-            % but adjusted for our notation.
+            % Case II: Follow the general proposition of Morris 2016.
+            % Algorithm was slightly adjusted for better implementation.  
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            kappa = 0;
-            F = [C];
-            while kappa < maxKappa
-                kappa = kappa + 1;
-                F = [C*A^kappa; F];
-                if rank(F) == size(F, 2)
-                    FPlus = pinv(F);  % Checked rank condition above.
-                    if rank(FPlus(:, 1:n)) == n
-                        break  % Both rank conditions are satisfied.
-                    end
+            % Finding smallest M for which F matrix is full column rank. 
+            % If F is full column rank for M, then VARMA has AR order M+1. 
+            % Thus, our search cannot exceed pMax-1.
+            B = B * inv(D);
+            F = zeros(0, n);
+            p = missing;
+            for M = 0:(pMax-1)
+                F = [C*A^M; F];
+                if rank(F) == m
+                    p = M + 1;
+                    break;
                 end
             end
-            if rank(F) ~= size(F, 2)
-                error("dynareToVarma: Rank condition for F is not satisfied. Could not find VARMA representation of DSGE.")
-            end
-            FPlus = pinv(F);  % Checked rank condition above
-            if rank(FPlus(:, 1:n)) ~= n
-                error("dynareToVarma: Rank condition for FPlus is not satisfied. Could not find VARMA representation of DSGE.")
-            end
-            p = kappa + 1;
-            q = kappa + 1;
 
-            % Finding VARMA Coefficients
-            Theta = FPlus(:, 1:n);
-            ThetaPlus = pinv(Theta);  % Checked rank conditions above.
+            if ismissing(p)
+                error("Could not find VARMA with p <= %i", pMax)
+            end
+            q = p;
 
-            G = cell(1, kappa+1);
-            for col=1:(kappa+1)
-                Gcol = zeros(n*(kappa+1), n);
-                for row=1:(col-1)
-                    rowStart = (row-1)*n+1;
-                    rowEnd = row*n;
-                    Gcol(rowStart:rowEnd, :) = C*A^(col-row-1)*B;
-                end
-                rowStart = (col-1)*n+1;
-                rowEnd = col*n;
-                Gcol(rowStart:rowEnd, :) = D;
-                G{col} = Gcol;
+            FPlus = pinv(F);
+
+            % Recovering AR coefficients
+            Bcoeffs = F * A * FPlus;
+            Bcoeffs = Bcoeffs(1:n, :);
+            As = VAR.coeffsToCellArray_(Bcoeffs);
+
+            % Constructing G matrix to recover MA coefficients
+            GFirstRow = eye(n);
+            for M = 0:(q-2)
+                tmp = C * A^M * B;
+                GFirstRow = [GFirstRow tmp];
+            end
+            G = zeros(n * q, n * q);
+            for i = 1:q
+                skip = (i - 1) * n;
+                r = (i - 1) * n + 1;
+                G(r:(r + n - 1), (skip + 1):end) = GFirstRow(:, 1:(end-skip));
             end
 
-            As = cell(1, kappa+1);
-            Phi0 = ThetaPlus * FPlus * G{1};
-            A0 = inv(Phi0);
-            Phi0 = Phi0 * S;  % re-normalising shock variances
-            for k=1:kappa
-                colStart = (k-1)*n + 1;
-                colEnd = k*n;
-                As{k} = ThetaPlus * (A*FPlus(:, colStart:colEnd) - FPlus(:, (colStart+n):(colEnd+n)));
-            end
-            colStart = (kappa+1-1)*n + 1;
-            colEnd = (kappa+1)*n;
-            As{end} = ThetaPlus * A * FPlus(:, colStart:colEnd);
-
-            Psis = cell(1, kappa+1);
-            for k=1:kappa
-                Psis{k} = ThetaPlus * (FPlus * G{k+1} - A * FPlus * G{k}) * A0;
-            end
-            Psis{end} = ThetaPlus * (B - A * FPlus * G{kappa+1}) * A0;
+            % Recovering MA coefficients
+            Psicoeffs = zeros(n, n * q);
+            Psicoeffs(:, 1:(end - n)) = G(1:n, (n + 1):end);
+            FAFPlusG = F * A * FPlus * G;
+            Psicoeffs = Psicoeffs - FAFPlusG(1:n, :);
+            FB = F * B;
+            Psicoeffs(:, (end - n + 1):end) = Psicoeffs(:, (end - n + 1):end) + FB(1:n, :);
+            Psis = VAR.coeffsToCellArray_(Psicoeffs);
         end
 
         function [A, B, C, D] = getABCD_(M_, oo_, options_)
@@ -409,6 +399,52 @@ classdef DSGE < handle & Model
             end
         end
 
+        function irfs = stateSpaceIrfs_(A, B, C, D, S, horizon)
+            % `stateSpaceIrfs_` Compute structural IRFs from a DSGE state-space system.
+            %
+            %   `irfs = stateSpaceIrfs_(A, B, C, D, S, horizon)` computes
+            %   impulse response functions from the state-space representation
+            %   returned by `getABCD_`:
+            %   $$
+            %   \begin{split}
+            %   x_t &= Ax_{t-1} + B\varepsilon_t \\
+            %   y_t &= Cx_{t-1} + D\varepsilon_t
+            %   \end{split}
+            %   $$
+            %   where the shocks are scaled by `S` so that the responses match
+            %   Dynare's convention of one-standard-deviation structural shocks.
+            %
+            %   ## Arguments
+            %   - `A` (matrix): State transition matrix.
+            %   - `B` (matrix): Shock loading matrix in the state equation.
+            %   - `C` (matrix): Observation matrix.
+            %   - `D` (matrix): Contemporaneous shock impact matrix.
+            %   - `S` (matrix): Diagonal matrix of shock standard deviations.
+            %   - `horizon` (integer): Maximum IRF horizon. `horizon=0`
+            %     returns only the contemporaneous impact.
+            %
+            %   ## Returns
+            %   - `irfs` (3D array): Structural IRFs of size
+            %     `(n_observables, n_shocks, horizon+1)`.
+            %
+            %   ## Notes
+            %   - Horizon 0 equals `D*S`.
+            %   - For `h >= 1`, the response is `C*A^(h-1)*B*S`.
+            %
+            %   See also `getABCD_`, `varmaIrfs_`
+
+            nObs = size(C, 1);
+            nShocks = size(D, 2);
+            irfs = zeros(nObs, nShocks, horizon+1);
+            irfs(:, :, 1) = D * S;
+
+            stateResponse = B * S;
+            for h=1:horizon
+                irfs(:, :, h+1) = C * stateResponse;
+                stateResponse = A * stateResponse;
+            end
+        end
+
     end
 
     methods
@@ -534,7 +570,8 @@ classdef DSGE < handle & Model
             % `IRF` Compute impulse response functions for DSGE model.
             %
             %   `irfObj = IRF(obj, maxHorizon)` computes IRFs of the DSGE
-            %   model up to horizon `maxHorizon`.
+            %   model up to horizon `maxHorizon`. Uses the VARMA representation
+            %   of the DSGE.
             %
             %   ## Arguments
             %   - `obj` (DSGE): DSGE model object.
@@ -549,6 +586,34 @@ classdef DSGE < handle & Model
             %   See also `coeffs`, `dynareToVarma_`, `varmaIrfs_`
             [Phi0, As, Psis] = obj.coeffs();
             irfs = DSGE.varmaIrfs_(Phi0, As, Psis, maxHorizon);
+            varnames = obj.getVariableNames();
+            irfObj = IRFContainer(irfs, varnames, obj);
+        end
+
+        function irfObj = IRFStateSpace(obj, maxHorizon)
+            % `IRFStateSpace` Compute impulse response functions from the DSGE state-space form.
+            %
+            %   `irfObj = IRFStateSpace(obj, maxHorizon)` computes IRFs of the
+            %   DSGE model directly from the state-space representation
+            %   obtained via `getABCD_`.
+            %
+            %   ## Arguments
+            %   - `obj` (DSGE): DSGE model object.
+            %   - `maxHorizon` (integer): Maximum forecast horizon.
+            %
+            %   ## Returns
+            %   - `irfObj` (IRFContainer): Container with computed IRFs.
+            %
+            %   ## Notes
+            %   - Structural shocks are scaled by their standard deviations so
+            %     that the returned IRFs match Dynare output.
+            %   - The resulting IRFs are equivalent to those obtained from the
+            %     VARMA representation used by `IRF`.
+            %
+            %   See also `IRF`, `getABCD_`, `varmaIrfs_`
+            [A, B, C, D] = DSGE.getABCD_(obj.M_, obj.oo_, obj.options_);
+            S = sqrt(DSGE.getShockVariances_(obj.M_));
+            irfs = DSGE.stateSpaceIrfs_(A, B, C, D, S, maxHorizon);
             varnames = obj.getVariableNames();
             irfObj = IRFContainer(irfs, varnames, obj);
         end

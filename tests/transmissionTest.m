@@ -216,4 +216,131 @@ function testTransmission7(testCase)
     assert(all(max(abs(effect(4:end) - effectIrfs(4:end)), [], 'all') < sqrt(eps())));
 end
 
+function testTransmission8(testCase)
+    B = jsondecode(fileread('./tests/simulated-svar-k3-p1/B.json'))';
+    Omega = jsondecode(fileread('./tests/simulated-svar-k3-p1/Omega.json'))';
+    irfs = jsondecode(fileread('./tests/simulated-svar-k3-p1/irfs.json'))';
+    irfsOrtho = jsondecode(fileread('./tests/simulated-svar-k3-p1/irfs_ortho.json'))';
 
+    % algorithms were created in the way that the variables in the condition 
+    % must be before the outcome variable. Technically, the outcome variable 
+    % could be the last variable involved in the condition. To prevent
+    % misinterpretation, we should therfore set the effects on all variables 
+    % except the highest one in the condition to NaN. 
+
+    cond = makeCondition("x1 & x2");
+    effect = transmission(1, B, Omega, cond, "BOmega"); 
+    effectIrfs = transmission(1, irfs, irfsOrtho, cond, "irf");
+
+    % Doing is manually
+    BTilde = B; 
+    OmegaTilde = Omega; 
+    OmegaTilde(2:end, :) = 0; 
+    BTilde(3:end, 1) = 0; 
+
+    manualBOmega = (eye(size(B)) - BTilde) \ OmegaTilde; 
+    manualBOmega = manualBOmega(:, 1);
+    manualBOmega(1, 1) = NaN;   % Because x2 is not on the path and user might interpret it.
+
+    manualIrfs = irfs(1, 1) * irfsOrtho(2,1) / irfsOrtho(1,1) * irfsOrtho(:, 2) / irfsOrtho(2, 2);
+    manualIrfs(1, 1) = NaN; 
+
+    assert(all(isnan(manualBOmega(1)))); 
+    assert(all(isnan(manualIrfs(1)))); 
+    assert(all(isnan(effect(1)))); 
+    assert(all(isnan(effectIrfs(1)))); 
+
+    assert(all(max(abs(effect - manualBOmega), [], 'all') < sqrt(eps())));
+    assert(all(max(abs(effectIrfs - manualIrfs), [], 'all') < sqrt(eps())));
+    assert(all(max(abs(effect - effectIrfs), [], 'all') < sqrt(eps())));
+
+end
+
+function testTransmission9(testCase)
+    B = jsondecode(fileread('./tests/simulated-svar-k3-p1/B.json'))';
+    Omega = jsondecode(fileread('./tests/simulated-svar-k3-p1/Omega.json'))';
+    irfs = jsondecode(fileread('./tests/simulated-svar-k3-p1/irfs.json'))';
+    irfsOrtho = jsondecode(fileread('./tests/simulated-svar-k3-p1/irfs_ortho.json'))';
+
+    % algorithms were created in the way that the variables in the condition 
+    % must be before the outcome variable. Technically, the outcome variable 
+    % could be the last variable involved in the condition. To prevent
+    % misinterpretation, we should therfore set the effects on all variables 
+    % except the highest one in the condition to NaN. 
+
+    cond = makeCondition("(x1 & x2) | x3"); 
+    effect = transmission(1, B, Omega, cond, "BOmega"); 
+    effectIrfs = transmission(1, irfs, irfsOrtho, cond, "irf");
+
+    % Doing it manually. Q((x1 & x2) | x3) = Q(x1 & x2) + Q(x3) - Q(x1 & x2 & x3)
+    % Term 1: Q(x1 & x2)
+    BTilde = B; 
+    OmegaTilde = Omega; 
+    OmegaTilde(2:end, :) = 0; 
+    BTilde(3:end, 1) = 0; 
+    manualBOmega1 = (eye(size(B)) - BTilde) \ OmegaTilde; 
+    manualBOmega1 = manualBOmega1(:, 1); 
+    manualBOmega1(1, 1) = NaN;  % To prevent misinterpretation
+
+    manualIrfs1 = irfs(1, 1) * irfsOrtho(2, 1) / irfsOrtho(1, 1) * irfsOrtho(:, 2) / irfsOrtho(2, 2); 
+
+    % Term 2: Q(x3)
+    BTilde = B; 
+    OmegaTilde = Omega; 
+    OmegaTilde(4:end, :) = 0; 
+    BTilde(4:end, 1:2) = 0; 
+    manualBOmega2 = (eye(size(B)) - BTilde) \ OmegaTilde; 
+    manualBOmega2 = manualBOmega2(:, 1); 
+
+    manualIrfs2 = irfs(3, 1) * irfsOrtho(:, 3) / irfsOrtho(3, 3); 
+
+    % Term 3: Q(x1 & x2 & x3)
+    BTilde = B; 
+    OmegaTilde = Omega; 
+    OmegaTilde(2:end, :) = 0; 
+    BTilde(3:end, 1) = 0; 
+    BTilde(4:end, 2) = 0; 
+    manualBOmega3 = (eye(size(B)) - BTilde) \ OmegaTilde; 
+    manualBOmega3 = manualBOmega3(:, 1); 
+    manualBOmega3(1:2, 1) = NaN;  % To prevent misinterpretation
+
+    manualIrfs3 = irfs(1, 1) * irfsOrtho(2, 1) / irfsOrtho(1, 1) * ...
+        irfsOrtho(3, 2) / irfsOrtho(2, 2) * irfsOrtho(:, 3) / irfsOrtho(3, 3);
+
+    manualBOmega = manualBOmega1 + manualBOmega2 - manualBOmega3;
+    manualBOmega(1:2, :) = NaN;  % to prevent misinterpretation
+    manualIrfs = manualIrfs1 + manualIrfs2 - manualIrfs3;
+    manualIrfs(1:2, :) = NaN;  % to prevent misinterpretation
+
+    assert(all(isnan(manualBOmega(1:2)))); 
+    assert(all(isnan(manualIrfs(1:2)))); 
+    assert(all(isnan(effect(1:2)))); 
+    assert(all(isnan(effectIrfs(1:2)))); 
+
+    assert(all(max(abs(effect - manualBOmega), [], 'all') < sqrt(eps())));
+    assert(all(max(abs(effectIrfs - manualIrfs), [], 'all') < sqrt(eps())));
+    assert(all(max(abs(effect - effectIrfs), [], 'all') < sqrt(eps())));
+end
+
+function testTransmission10(testCase)
+
+    B = jsondecode(fileread('./tests/simulated-svar-k3-p1/B.json'))';
+    Omega = jsondecode(fileread('./tests/simulated-svar-k3-p1/Omega.json'))';
+    irfs = jsondecode(fileread('./tests/simulated-svar-k3-p1/irfs.json'))';
+    irfsOrtho = jsondecode(fileread('./tests/simulated-svar-k3-p1/irfs_ortho.json'))';
+
+    % algorithms were created in the way that the variables in the condition 
+    % must be before the outcome variable. Technically, the outcome variable 
+    % could be the last variable involved in the condition. To prevent
+    % misinterpretation, we should therfore set the effects on all variables 
+    % except the highest one in the condition to NaN. Note that we should set 
+    % all values of variables involved in a NOT to NaN since these should 
+    % never be interpreted even if it is the outcome variable. 
+
+    cond = makeCondition("!x2"); 
+    effect = transmission(1, B, Omega, cond, "BOmega"); 
+    effectIrfs = transmission(1, irfs, irfsOrtho, cond, "irf"); 
+
+    assert(all(isnan(effect(1:2)))); 
+    assert(all(isnan(effectIrfs(1:2)))); 
+end
