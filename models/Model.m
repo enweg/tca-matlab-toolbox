@@ -36,6 +36,10 @@ classdef (Abstract) Model < handle
         % in a tabular or matrix format (e.g., a table or matrix).
         getInputData(obj);
 
+        % Returns the names of the variables in the input data as a cell
+        % array of character vectors.
+        getVariableNames(obj);
+
         % Returns true if the model is a structural model, i.e. if the model 
         % is causal.
         isStructural(obj);

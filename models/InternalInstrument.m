@@ -25,13 +25,31 @@ classdef InternalInstrument < IdentificationMethod
     %   See also `IdentificationMethod`, `Recursive`
 
     properties
-        instrument
-        normalisingVariable
-        normalisingHorizon
+        instrument          % Instrument variable (name or index)
+        normalisingVariable % Variable whose response normalises the shock (name or index)
+        normalisingHorizon  % Horizon at which the normalising response is one
     end
 
     methods
         function obj = InternalInstrument(normalisingVariable, varargin)
+            % `InternalInstrument` Construct an internal instrument identification method.
+            %
+            %   `obj = InternalInstrument(normalisingVariable)` identifies the shock to
+            %   the first variable, normalised such that the response of
+            %   `normalisingVariable` at horizon `0` is one.
+            %   `obj = InternalInstrument(normalisingVariable, 'instrument', instrument, 'normalisingHorizon', h)`
+            %   sets the instrument and the normalising horizon.
+            %
+            %   ## Arguments
+            %   - `normalisingVariable` (char or integer): Variable whose response is
+            %     normalised to one.
+            %   - `varargin`: Name-value pairs:
+            %     - `'instrument'` (char or integer): Instrument variable. Defaults to `1`.
+            %     - `'normalisingHorizon'` (integer): Horizon of the normalisation.
+            %       Defaults to `0`.
+            %
+            %   ## Returns
+            %   - `obj` (InternalInstrument): Identification method.
             opts.instrument = 1;
             opts.normalisingHorizon = 0;
             for i = 1:2:length(varargin)
@@ -79,6 +97,22 @@ classdef InternalInstrument < IdentificationMethod
         end
 
         function irfs = identifyIrfs(obj, model, maxHorizon)
+            % `identifyIrfs` Identify structural IRFs from a reduced-form model.
+            %
+            %   `irfs = identifyIrfs(obj, model, maxHorizon)` returns IRFs up to
+            %   horizon `maxHorizon` to the shock identified by the internal instrument. IRFs to all other shocks are `NaN`.
+            %
+            %   ## Arguments
+            %   - `obj` (InternalInstrument): Identification method.
+            %   - `model` (Model): Estimated reduced-form model. Currently only `VAR`
+            %     models are supported.
+            %   - `maxHorizon` (integer): Maximum IRF horizon.
+            %
+            %   ## Returns
+            %   - `irfs` (3D array): IRFs with dimensions (response variable, shock,
+            %     horizon).
+            %
+            %   See also `IdentificationMethod`, `VAR.IRF`
 
             if ~isnumeric(obj.instrument)
                 varnames = model.getVariableNames();
@@ -103,6 +137,10 @@ classdef InternalInstrument < IdentificationMethod
         end
 
         function varargout = identify(obj, model)
+            % `identify` Not supported for internal instruments.
+            %
+            %   Always throws an error, since internal instruments only identify IRFs
+            %   and not the entire structural model. Use `identifyIrfs` instead.
             switch class(model)
                 case 'VAR'
                     error("InternalInstruments can only be used to identify IRFs of SVARs but not the entire SVAR.");
@@ -112,6 +150,27 @@ classdef InternalInstrument < IdentificationMethod
         end
 
         function effects = identifyTransmission(obj, model, shock, condition, order, maxHorizon)
+            % `identifyTransmission` Compute transmission effects using this identification method.
+            %
+            %   `effects = identifyTransmission(obj, model, shock, condition, order, maxHorizon)`
+            %   computes the effect of `shock` through the channel defined by
+            %   `condition` under the ordering `order`, up to horizon `maxHorizon`.
+            %
+            %   ## Arguments
+            %   - `obj` (InternalInstrument): Identification method.
+            %   - `model` (Model): Estimated reduced-form model. Currently only `VAR`
+            %     models are supported.
+            %   - `shock` (integer): Index of the shock.
+            %   - `condition` (Q): Transmission condition.
+            %   - `order` (cell array or vector): Ordering of the variables given by
+            %     the transmission matrix, as names or indices.
+            %   - `maxHorizon` (integer): Maximum horizon.
+            %
+            %   ## Returns
+            %   - `effects` (3D array): Transmission effects with dimensions (response
+            %     variable, shock, horizon).
+            %
+            %   See also `VAR.transmission`, `transmission`
             if ~isnumeric(shock)
                 error("Shock must be provided as integer.");
             end

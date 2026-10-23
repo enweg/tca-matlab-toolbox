@@ -57,6 +57,22 @@ classdef Recursive < IdentificationMethod
     methods
         
         function irfs = identifyIrfs(obj, model, maxHorizon)
+            % `identifyIrfs` Identify structural IRFs from a reduced-form model.
+            %
+            %   `irfs = identifyIrfs(obj, model, maxHorizon)` returns IRFs up to
+            %   horizon `maxHorizon` using a Cholesky decomposition of the reduced-form error covariance.
+            %
+            %   ## Arguments
+            %   - `obj` (Recursive): Identification method.
+            %   - `model` (Model): Estimated reduced-form model. Currently only `VAR`
+            %     models are supported.
+            %   - `maxHorizon` (integer): Maximum IRF horizon.
+            %
+            %   ## Returns
+            %   - `irfs` (3D array): IRFs with dimensions (response variable, shock,
+            %     horizon).
+            %
+            %   See also `IdentificationMethod`, `VAR.IRF`
             switch class(model)
                 case 'VAR'
                     B = model.coeffs(true);
@@ -69,6 +85,24 @@ classdef Recursive < IdentificationMethod
         end
 
         function varargout = identify(obj, model)
+            % `identify` Identify the structural model using a recursive scheme.
+            %
+            %   `[A0, APlus] = identify(obj, model)` identifies the structural matrices
+            %   of an SVAR from the estimated `VAR` `model` using a Cholesky
+            %   decomposition. `coeffs = identify(obj, model)` estimates the
+            %   coefficients of an `LP` `model` per horizon, treating the treatment
+            %   variable as recursively identified.
+            %
+            %   ## Arguments
+            %   - `obj` (Recursive): Identification method.
+            %   - `model` (VAR or LP): Model to identify.
+            %
+            %   ## Returns
+            %   - For a `VAR`: `A0` (contemporaneous matrix) and `APlus` (stacked
+            %     coefficient matrix `[C A1 ... Ap]`).
+            %   - For an `LP`: the coefficient estimates per horizon.
+            %
+            %   See also `IdentificationMethod`, `SVAR.fit`, `LP.fit`
             switch class(model)
                 case 'VAR'
                     B = model.coeffs();
@@ -87,6 +121,27 @@ classdef Recursive < IdentificationMethod
         end
 
         function effects = identifyTransmission(obj, model, shock, condition, order, maxHorizon)
+            % `identifyTransmission` Compute transmission effects using this identification method.
+            %
+            %   `effects = identifyTransmission(obj, model, shock, condition, order, maxHorizon)`
+            %   computes the effect of `shock` through the channel defined by
+            %   `condition` under the ordering `order`, up to horizon `maxHorizon`.
+            %
+            %   ## Arguments
+            %   - `obj` (Recursive): Identification method.
+            %   - `model` (Model): Estimated reduced-form model. Currently only `VAR`
+            %     models are supported.
+            %   - `shock` (integer): Index of the shock.
+            %   - `condition` (Q): Transmission condition.
+            %   - `order` (cell array or vector): Ordering of the variables given by
+            %     the transmission matrix, as names or indices.
+            %   - `maxHorizon` (integer): Maximum horizon.
+            %
+            %   ## Returns
+            %   - `effects` (3D array): Transmission effects with dimensions (response
+            %     variable, shock, horizon).
+            %
+            %   See also `VAR.transmission`, `transmission`
             if ~isnumeric(shock)
                 error("Shock must be provided as integer.");
             end

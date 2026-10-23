@@ -41,8 +41,8 @@ classdef Q
     %   - DO NOT use OR (`|`) inside the string input for `Q`, as it is not supported.
 
     properties
-        vars
-        multiplier
+        vars                % Boolean variable expressions, one per term
+        multiplier          % Multipliers associated with each term
     end
     
     methods
@@ -305,6 +305,11 @@ classdef Q
             end
         end
         function display(obj)
+            % `display` Display a transmission condition.
+            %
+            %   Called when a `Q` object is shown without a semicolon. Calls `disp`.
+            %
+            %   See also `Q.disp`
             disp(obj);
         end
     end

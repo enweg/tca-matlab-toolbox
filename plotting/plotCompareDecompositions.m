@@ -1,4 +1,4 @@
-function fig = plotCompareDecomposition(...
+function fig = plotCompareDecompositions(...
         idxOutcome, ...
         irfs, ...
         cellChannelEffects1, ...
@@ -7,6 +7,31 @@ function fig = plotCompareDecomposition(...
         decompositionNames, ...
         ylabelText ...
     )
+    % `plotCompareDecompositions` Plot two decompositions of an IRF into transmission channels side by side.
+    %
+    %   `fig = plotCompareDecompositions(idxOutcome, irfs, cellChannelEffects1, cellChannelEffects2, channelNames, decompositionNames)`
+    %   plots, for every horizon, the channel effects of both decompositions as
+    %   two adjacent stacked bars (the second one transparent) and the total
+    %   effect as a line.
+    %
+    %   ## Arguments
+    %   - `idxOutcome` (integer): Index of the outcome variable.
+    %   - `irfs` (3D array): IRFs to a single shock, of size
+    %     `(nVariables x 1 x (maxHorizon + 1))`. The total effect is taken from
+    %     these IRFs.
+    %   - `cellChannelEffects1` (cell array): Channel effects of the first
+    %     decomposition, one entry per channel, each of the same size as `irfs`.
+    %   - `cellChannelEffects2` (cell array): Channel effects of the second
+    %     decomposition. Must have as many channels as `cellChannelEffects1`.
+    %   - `channelNames` (string array): Names of the channels, used in the legend.
+    %   - `decompositionNames` (string array): Names of the two decompositions.
+    %   - `ylabelText` (string, optional): Label of the y-axis. Defaults to
+    %     `'Effect Size'`.
+    %
+    %   ## Returns
+    %   - `fig` (Figure): Handle of the created figure.
+    %
+    %   See also `plotDecomposition`, `transmission`
 
     total = vec(irfs(idxOutcome, 1, :));
 

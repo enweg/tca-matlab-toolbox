@@ -23,6 +23,27 @@ classdef IRFContainer
 
     methods
         function obj = IRFContainer(irfs, varnames, model, identificationMethod)
+            % `IRFContainer` Construct a container of impulse response functions.
+            %
+            %   `obj = IRFContainer(irfs, varnames, model)` stores the IRFs computed
+            %   from a structural `model`. `obj = IRFContainer(irfs, varnames, model, identificationMethod)`
+            %   also stores the identification method used to obtain structural IRFs
+            %   from a reduced-form `model`.
+            %
+            %   ## Arguments
+            %   - `irfs` (3D array): IRFs with dimensions (response variable, shock,
+            %     horizon).
+            %   - `varnames` (cell array): Names of the response variables.
+            %   - `model` (Model): Model used to compute the IRFs.
+            %   - `identificationMethod` (IdentificationMethod, optional): Identification
+            %     method. Defaults to `missing`.
+            %
+            %   ## Returns
+            %   - `obj` (IRFContainer): The IRF container.
+            %
+            %   ## Notes
+            %   - `obj(i, j, h)` indexes the IRF array directly, and `+`, `-`, `.*` and
+            %     `./` with a scalar act on the IRFs.
             if ~isa(model, 'Model')
                 error("The provided model is not a Model.");
             end
@@ -40,6 +61,10 @@ classdef IRFContainer
         end
 
         function irfs = getIrfArray(obj)
+            % `getIrfArray` Return the IRFs as a 3D array.
+            %
+            %   `irfs = getIrfArray(obj)` returns the stored IRFs with dimensions
+            %   (response variable, shock, horizon).
             irfs = obj.irfs; 
         end
 
@@ -58,6 +83,10 @@ classdef IRFContainer
         end
 
         function obj = plus(obj, scalar)
+            % `plus` Add a scalar to all IRFs.
+            %
+            %   `obj = obj + scalar` returns a container whose IRFs are
+            %   `obj.irfs + scalar`. Only numeric scalars are supported.
             if isnumeric(scalar)
                 obj.irfs = obj.irfs + scalar;
             else
@@ -66,6 +95,10 @@ classdef IRFContainer
         end
 
         function obj = minus(obj, scalar)
+            % `minus` Subtract a scalar from all IRFs.
+            %
+            %   `obj = obj - scalar` returns a container whose IRFs are
+            %   `obj.irfs - scalar`. Only numeric scalars are supported.
             if isnumeric(scalar)
                 obj.irfs = obj.irfs - scalar;
             else
@@ -74,6 +107,10 @@ classdef IRFContainer
         end
 
         function obj = times(obj, scalar)
+            % `times` Multiply all IRFs by a scalar.
+            %
+            %   `obj = obj .* scalar` returns a container whose IRFs are
+            %   `obj.irfs .* scalar`. Only numeric scalars are supported.
             if isnumeric(scalar)
                 obj.irfs = obj.irfs .* scalar;
             else
@@ -82,6 +119,10 @@ classdef IRFContainer
         end
 
         function obj = rdivide(obj, scalar)
+            % `rdivide` Divide all IRFs by a scalar.
+            %
+            %   `obj = obj ./ scalar` returns a container whose IRFs are
+            %   `obj.irfs ./ scalar`. Only numeric scalars are supported.
             if isnumeric(scalar)
                 obj.irfs = obj.irfs ./ scalar;
             else
@@ -90,6 +131,7 @@ classdef IRFContainer
         end
 
         function disp(obj)
+            % `disp` Display the IRF array.
             disp(obj.irfs);
         end
     end

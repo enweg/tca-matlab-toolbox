@@ -42,17 +42,17 @@ classdef LP < handle & Model
     %   - `Yhat` (array): Fitted values per horizon.
     %
     properties
-        data 
-        treatment
-        p
-        horizons
-        includeConstant
+        data                % Input time series dataset
+        treatment           % Treatment variable (name or index)
+        p                   % Number of lags
+        horizons            % Forecast horizons for projections
+        includeConstant     % Whether to include an intercept
 
-        B
-        Y
-        X
-        U
-        Yhat
+        B                   % Coefficient estimates per horizon
+        Y                   % Dependent variables per horizon
+        X                   % Common regressor matrix
+        U                   % Residuals per horizon
+        Yhat                % Fitted values per horizon
     end
 
     methods (Static)
@@ -164,6 +164,12 @@ classdef LP < handle & Model
         end
 
         function flag = isFitted(obj)
+            % `isFitted` Return whether the model has been estimated.
+            %
+            %   `flag = isFitted(obj)` returns `true` if `fit` (or `fitAndSelect`) has
+            %   been called, and `false` otherwise.
+            %
+            %   See also `fit`, `requireFitted`
             flag = size(obj.Yhat, 1) > 0;
         end
 
@@ -239,27 +245,60 @@ classdef LP < handle & Model
         end
 
         function n = nobs(obj)
+            % `nobs` Return the number of effective observations.
+            %
+            %   `n = nobs(obj)` returns the number of observations used in the
+            %   estimation, excluding the initial observations lost to lags and leads.
+            %
+            %   See also `getDependent`, `getIndependent`
             n = size(obj.data, 1) - obj.p - obj.horizons;
         end
 
         function Y = getDependent(obj)
+            % `getDependent` Return the dependent variables.
+            %
+            %   `Y = getDependent(obj)` returns the left-hand side variables used in
+            %   the estimation, one slice per horizon.
+            %
+            %   See also `getIndependent`, `getInputData`
             Y = obj.Y;
         end
 
         function X = getIndependent(obj)
+            % `getIndependent` Return the independent variables.
+            %
+            %   `X = getIndependent(obj)` returns the right-hand side variables used
+            %   in the estimation, including deterministic components.
+            %
+            %   See also `getDependent`, `getInputData`
             X = obj.X;
         end
 
         function data = getInputData(obj)
+            % `getInputData` Return the data used to estimate the model.
+            %
+            %   `data = getInputData(obj)` returns the input data (a table) that was
+            %   given when constructing the model.
+            %
+            %   See also `getVariableNames`
             data = obj.data;
         end
 
         function varnames = getVariableNames(obj)
+            % `getVariableNames` Return the names of the variables in the input data.
+            %
+            %   `varnames = getVariableNames(obj)` returns the variable names of the
+            %   input data as a cell array of character vectors.
+            %
+            %   See also `getInputData`
             data = getInputData(obj);
             varnames = data.Properties.VariableNames;
         end
 
         function flag = isStructural(obj)
+            % `isStructural` Return whether the model is structural.
+            %
+            %   `flag = isStructural(obj)` always returns `true` for an `LP`, since its coefficients have a structural interpretation once identified.
             flag = true;
         end
 

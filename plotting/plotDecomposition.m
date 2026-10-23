@@ -1,4 +1,26 @@
 function fig = plotDecomposition(idxOutcome, irfs, cellChannelEffects, channelNames, ylabelText)
+    % `plotDecomposition` Plot a decomposition of an IRF into transmission channels.
+    %
+    %   `fig = plotDecomposition(idxOutcome, irfs, cellChannelEffects, channelNames)`
+    %   plots the channel effects on the outcome variable `idxOutcome` as
+    %   stacked bars and the total effect as a line.
+    %
+    %   ## Arguments
+    %   - `idxOutcome` (integer): Index of the outcome variable.
+    %   - `irfs` (3D array): IRFs to a single shock, of size
+    %     `(nVariables x 1 x (maxHorizon + 1))`. The total effect is taken from
+    %     these IRFs.
+    %   - `cellChannelEffects` (cell array): Channel effects, one entry per
+    %     channel, each of the same size as `irfs`, as returned by `transmission`.
+    %   - `channelNames` (string array): Names of the channels, used in the legend.
+    %   - `ylabelText` (string, optional): Label of the y-axis. Defaults to
+    %     `'Effect Size'`.
+    %
+    %   ## Returns
+    %   - `fig` (Figure): Handle of the created figure.
+    %
+    %   See also `plotCompareDecompositions`, `transmission`
+
     total = vec(irfs(idxOutcome, 1, :));
     channelEffects = vec(cellChannelEffects{1}(idxOutcome, 1, :));
     for ii = 2:length(cellChannelEffects)

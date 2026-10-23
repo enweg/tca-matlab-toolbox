@@ -36,6 +36,23 @@ classdef ExternalInstrument < IdentificationMethod
 
     methods
         function obj = ExternalInstrument(treatment, instruments, varargin)
+            % `ExternalInstrument` Construct an external instrument identification method.
+            %
+            %   `obj = ExternalInstrument(treatment, instruments)` instruments the
+            %   `treatment` variable with `instruments`.
+            %   `obj = ExternalInstrument(treatment, instruments, 'normalisingHorizon', h)`
+            %   also sets the horizon at which the treatment's response is normalised.
+            %
+            %   ## Arguments
+            %   - `treatment` (char or integer): Treatment variable, by name or index.
+            %     Must match the treatment of the `LP`.
+            %   - `instruments` (matrix or table): Instruments, spanning the same
+            %     period as the model data.
+            %   - `varargin`: Name-value pairs:
+            %     - `'normalisingHorizon'` (integer): Defaults to `0`.
+            %
+            %   ## Returns
+            %   - `obj` (ExternalInstrument): Identification method.
             opts.normalisingHorizon = 0;
             for i = 1:2:length(varargin)
                 if ~isfield(opts, varargin{i})
@@ -54,6 +71,20 @@ classdef ExternalInstrument < IdentificationMethod
         end
 
         function varargout = identify(obj, model)
+            % `identify` Estimate an LP using external instruments.
+            %
+            %   `coeffs = identify(obj, model)` estimates the coefficients of the `LP`
+            %   `model` per horizon by two-stage least squares, instrumenting the
+            %   treatment with `obj.instruments`.
+            %
+            %   ## Arguments
+            %   - `obj` (ExternalInstrument): Identification method.
+            %   - `model` (LP): Local projection model. Other models are not supported.
+            %
+            %   ## Returns
+            %   - `coeffs` (3D array): Coefficient estimates per horizon.
+            %
+            %   See also `LP.fit`
             switch class(model)
                 case 'LP'
                     varargout{1} = obj.identifyLP_(model);

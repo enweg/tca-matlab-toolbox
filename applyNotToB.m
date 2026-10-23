@@ -15,7 +15,7 @@ function [BTilde, OmegaTilde] = applyNotToB(B, Omega, from, var)
     %   ## Notes
     %   - This function is intended for internal use only.
     %   
-    %   See also `applyAndToB`, `makeB`, `makeOmega`, and `makeSystemsForms`.
+    %   See also `applyAndToB`, `makeB`, `makeOmega`, and `makeSystemsForm`.
 
     OmegaTilde = Omega; 
     BTilde = B;

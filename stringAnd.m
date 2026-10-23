@@ -1,4 +1,27 @@
 function s = stringAnd(s1, s2)
+    % `stringAnd` Combine two Boolean conditions with AND.
+    %
+    %   `s = stringAnd(s1, s2)` joins `s1` and `s2` using `' & '`. Each
+    %   variable occurs only once in the result, and variables are sorted in
+    %   descending order, so negated variables come after all non-negated
+    %   variables. If one of the inputs is `'T'` (true), the other input is
+    %   returned.
+    %
+    %   ## Arguments
+    %   - `s1` (string): Boolean condition using systems form variables `x`.
+    %   - `s2` (string): Boolean condition using systems form variables `x`.
+    %
+    %   ## Returns
+    %   - `s` (string): The combined condition.
+    %
+    %   ## Example
+    %   ```
+    %   stringAnd('x1 & x2', 'x1 & !x2')  % returns 'x2 & x1 & !x2'
+    %   ```
+    %
+    %   ## Notes
+    %   - This function is intended for internal use only.
+
     if isequal(s2, 'T')
         s = s1;
         return;

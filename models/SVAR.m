@@ -39,11 +39,11 @@ classdef SVAR < handle & Model
     %
     %   See also `VAR`
     properties
-        A0
-        APlus
-        p
-        trendExponents
-        VARModel
+        A0                  % Contemporaneous coefficient matrix
+        APlus               % Stacked coefficient matrix [C A1 ... Ap]
+        p                   % Lag order of the (S)VAR model
+        trendExponents      % Time trend exponents (e.g., [0, 1])
+        VARModel            % Reduced-form VAR representation
     end
 
     methods (Static)
@@ -182,6 +182,12 @@ classdef SVAR < handle & Model
         end
 
         function flag = isFitted(obj)
+            % `isFitted` Return whether the model has been estimated.
+            %
+            %   `flag = isFitted(obj)` returns `true` if `fit` (or `fitAndSelect`) has
+            %   been called on the underlying `VAR`, and `false` otherwise.
+            %
+            %   See also `fit`, `requireFitted`
             flag = obj.VARModel.isFitted();
         end
 
@@ -250,26 +256,59 @@ classdef SVAR < handle & Model
         end
 
         function n = nobs(obj)
+            % `nobs` Return the number of effective observations of the underlying `VAR`.
+            %
+            %   `n = nobs(obj)` returns the number of observations used in the
+            %   estimation, excluding the initial observations lost to lags.
+            %
+            %   See also `getDependent`, `getIndependent`
             n = obj.VARModel.nobs();
         end
 
         function Y = getDependent(obj)
+            % `getDependent` Return the dependent variables of the underlying `VAR`.
+            %
+            %   `Y = getDependent(obj)` returns the left-hand side variables used in
+            %   the estimation.
+            %
+            %   See also `getIndependent`, `getInputData`
             Y = obj.VARModel.getDependent();
         end
 
         function X = getIndependent(obj)
+            % `getIndependent` Return the independent variables of the underlying `VAR`.
+            %
+            %   `X = getIndependent(obj)` returns the right-hand side variables used
+            %   in the estimation, including deterministic components.
+            %
+            %   See also `getDependent`, `getInputData`
             X = obj.VARModel.getIndependent();
         end
 
         function data = getInputData(obj)
+            % `getInputData` Return the data used to estimate the model.
+            %
+            %   `data = getInputData(obj)` returns the input data (a table) that was
+            %   given when constructing the model.
+            %
+            %   See also `getVariableNames`
             data = obj.VARModel.getInputData();
         end
 
         function varnames = getVariableNames(obj)
+            % `getVariableNames` Return the names of the variables in the input data.
+            %
+            %   `varnames = getVariableNames(obj)` returns the variable names of the
+            %   input data as a cell array of character vectors.
+            %
+            %   See also `getInputData`
             varnames = obj.VARModel.getVariableNames();
         end
 
         function flag = isStructural(obj)
+            % `isStructural` Return whether the model is structural.
+            %
+            %   `flag = isStructural(obj)` always returns `true` for a `SVAR`, since it is a structural model.
             flag = true;
         end
 
@@ -416,7 +455,7 @@ classdef SVAR < handle & Model
             %   ## Notes
             %   - Maximum lag length is given by the lag length of the provided model.
             %
-            %   See also `SVAr.fit`, `aic`, `bic`, `hqc`, `sic`, `VAR.fitAndSelect`
+            %   See also `SVAR.fit`, `aic`, `bic`, `hqc`, `sic`, `VAR.fitAndSelect`
             if nargin < 3
                 icFunction = @VAR.aic_;
             end

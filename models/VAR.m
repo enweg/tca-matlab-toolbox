@@ -186,7 +186,7 @@ classdef VAR < handle & Model
             %     the constant or trans coefficients `C`). Size is `(k, k*p)`
             %     where `k` is the number of variables and `p` is the lag order.
             %
-            %   See also `DSGE.coeffsToCellArray_`.
+            %   See also `VAR.coeffsToCellArray_`.
             p = size(BCellArray, 2);
             k = size(BCellArray{1, 1}, 1);
             B = zeros(k, k*p);
@@ -429,6 +429,12 @@ classdef VAR < handle & Model
         end
 
         function flag = isFitted(obj)
+            % `isFitted` Return whether the model has been estimated.
+            %
+            %   `flag = isFitted(obj)` returns `true` if `fit` (or `fitAndSelect`) has
+            %   been called, and `false` otherwise.
+            %
+            %   See also `fit`, `requireFitted`
             if size(obj.Yhat) > 0
                 flag = true;
                 return;
@@ -498,32 +504,72 @@ classdef VAR < handle & Model
         end
 
         function n = nobs(obj)
+            % `nobs` Return the number of effective observations.
+            %
+            %   `n = nobs(obj)` returns the number of observations used in the
+            %   estimation, excluding the initial observations lost to lags.
+            %
+            %   See also `getDependent`, `getIndependent`
             n = size(obj.Y, 1);
         end
 
         function n = ncoeffs(obj)
+            % `ncoeffs` Return the number of estimated coefficients.
+            %
+            %   `n = ncoeffs(obj)` returns the number of elements of `coeffs(obj)`,
+            %   including the coefficients of deterministic components. The model must
+            %   be estimated.
+            %
+            %   See also `coeffs`, `aic`, `bic`, `hqc`, `sic`
             requireFitted(obj);
             n = prod(size(coeffs(obj)));
         end
 
         function Y = getDependent(obj)
+            % `getDependent` Return the dependent variables.
+            %
+            %   `Y = getDependent(obj)` returns the left-hand side variables used in
+            %   the estimation.
+            %
+            %   See also `getIndependent`, `getInputData`
             Y = obj.Y;
         end
 
         function X = getIndependent(obj)
+            % `getIndependent` Return the independent variables.
+            %
+            %   `X = getIndependent(obj)` returns the right-hand side variables used
+            %   in the estimation, including deterministic components.
+            %
+            %   See also `getDependent`, `getInputData`
             X = obj.X;
         end
 
         function data = getInputData(obj)
+            % `getInputData` Return the data used to estimate the model.
+            %
+            %   `data = getInputData(obj)` returns the input data (a table) that was
+            %   given when constructing the model.
+            %
+            %   See also `getVariableNames`
             data = obj.inputData;
         end
 
         function varnames = getVariableNames(obj)
+            % `getVariableNames` Return the names of the variables in the input data.
+            %
+            %   `varnames = getVariableNames(obj)` returns the variable names of the
+            %   input data as a cell array of character vectors.
+            %
+            %   See also `getInputData`
             data = getInputData(obj);
             varnames = data.Properties.VariableNames;
         end
 
         function flag = isStructural(obj)
+            % `isStructural` Return whether the model is structural.
+            %
+            %   `flag = isStructural(obj)` always returns `false` for a `VAR`, since a VAR is a reduced-form model.
             flag = false;
         end
 

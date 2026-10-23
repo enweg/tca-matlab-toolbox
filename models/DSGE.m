@@ -450,6 +450,22 @@ classdef DSGE < handle & Model
     methods
 
         function obj = DSGE(M_, options_, oo_)
+            % `DSGE` Construct a DSGE model from Dynare output.
+            %
+            %   `obj = DSGE(M_, options_, oo_)` wraps the structures that Dynare
+            %   creates after solving a model with `stoch_simul`.
+            %
+            %   ## Arguments
+            %   - `M_` (struct): Model structure returned by Dynare.
+            %   - `options_` (struct): Options structure returned by Dynare. Its
+            %     `varobs` field defines the observed variables.
+            %   - `oo_` (struct): Output structure with results from Dynare.
+            %
+            %   ## Returns
+            %   - `obj` (DSGE): DSGE model object.
+            %
+            %   ## Notes
+            %   - Dynare must be on the Matlab path when working with `DSGE` objects.
             obj.M_ = M_;
             obj.options_ = options_;
             obj.oo_ = oo_;
@@ -525,6 +541,12 @@ classdef DSGE < handle & Model
         end
 
         function varnames = getVariableNames(obj)
+            % `getVariableNames` Return the names of the observed variables.
+            %
+            %   `varnames = getVariableNames(obj)` returns the names of the variables
+            %   declared as `varobs` in the Dynare model.
+            %
+            %   See also `getShockNames`
             varnames = DSGE.dynareCellArrayToVec_(obj.options_.varobs);
         end
 
@@ -534,35 +556,68 @@ classdef DSGE < handle & Model
         end
 
         function flag = isStructural(obj)
+            % `isStructural` Return whether the model is structural.
+            %
+            %   `flag = isStructural(obj)` always returns `true` for a `DSGE`.
             flag = true;
         end
 
         function flag = isFitted(obj)
+            % `isFitted` Return whether the model has been estimated.
+            %
+            %   `flag = isFitted(obj)` always returns `true`, since a `DSGE` is
+            %   constructed from an already solved Dynare model.
             flag = true;
         end
         function fit(obj)
+            % `fit` Not supported for DSGE models.
+            %
+            %   Always throws an error. DSGE models must be solved or estimated using
+            %   Dynare before constructing the `DSGE` object.
             error("DSGE must be estimated using Dynare.");
         end
         function fitAndSelect(obj)
+            % `fitAndSelect` Not supported for DSGE models.
+            %
+            %   Always throws an error. DSGE models must be solved or estimated using
+            %   Dynare before constructing the `DSGE` object.
             error("DSGE must be estimated using Dynare.");
         end
 
         function getInputData(obj)
+            % `getInputData` Not supported for DSGE models.
+            %
+            %   Always throws an error, since a `DSGE` object holds no input data.
             error("No input data provided.")
         end
         function getIndependent(obj)
+            % `getIndependent` Not supported for DSGE models.
+            %
+            %   Always throws an error, since a `DSGE` object holds no input data.
             error("No input data provided.")
         end
         function getDependent(obj)
+            % `getDependent` Not supported for DSGE models.
+            %
+            %   Always throws an error, since a `DSGE` object holds no input data.
             error("No input data provided.")
         end
         function nobs(obj)
+            % `nobs` Not supported for DSGE models.
+            %
+            %   Always throws an error, since a `DSGE` object holds no input data.
             error("No input data provided.")
         end
         function residuals(obj)
+            % `residuals` Not supported for DSGE models.
+            %
+            %   Always throws an error, since a `DSGE` object holds no input data.
             error("No input data provided.")
         end
         function fitted(obj)
+            % `fitted` Not supported for DSGE models.
+            %
+            %   Always throws an error, since a `DSGE` object holds no input data.
             error("No input data provided.")
         end
 
