@@ -25,10 +25,12 @@ function effects = transmission(from, arr1, arr2, q, method, order)
     %   - `order` (vector, optional): variable ordering as defined by the transmission matrix.
     %
     %   ## Returns:
-    %   - `effects` (vector): A vector where entry `i` corresponds to the transmission 
-    %     effect on variable `x_i`. If `x_k` is the variable in the transmission 
-    %     condition with the highest index, all entries in the returned vector with 
-    %     index less than `k` are `NaN`, since interpretation of those results is nonsensical.
+    %   - `effects` (vector): A vector where entry `i` corresponds to the transmission
+    %     effect on variable `x_i`. If `x_k` is the variable with the highest index
+    %     that enters the (simplified) transmission condition through an AND, then
+    %     all entries with index `i <= k` are `NaN`, since the outcome variable must
+    %     be ordered after all variables that paths must go through. Variables that
+    %     only enter through a NOT never lead to `NaN`. See also `maskUninterpretable`.
     %
     %   ## Example:
     %   ```
@@ -88,13 +90,17 @@ function effects = transmission(from, arr1, arr2, q, method, order)
         error("Unrecognised method. Must be either BOmega or irf");
     end
 
-    % Effects that are before (including) the last NOT should not be interpreted
-    % and are set to NaN to prevent accidental interpretation. Similarly, 
-    % effects before (not including) the last AND should not be interpreted 
-    % and are set to NaN. 
-
-    effects(1:max(cat(2, varNot{:}))) = NaN; 
-    effects(1:(max(cat(2, varAnd{:})) - 1)) = NaN;
+    % In the theory we assume that the outcome variable is ordered after all
+    % variables in the transmission condition. A user might not be aware of
+    % this and may interpret the effect on a variable ordered before (or equal
+    % to) a conditioning variable. For NOT this is not a problem: a path to the
+    % outcome cannot go through variables ordered after it, so the effect is
+    % still correct. For AND this is a problem: the path cannot have gone
+    % through the AND variable before reaching the outcome. All effects up to
+    % and including the highest AND variable are thus set to NaN. This is done
+    % here, for the full condition, and not for individual terms, since the
+    % irf method computes NOT literals via AND-only terms (inclusion-exclusion).
+    effects = maskUninterpretable(effects, varAnd);
 
     if nargin == 6
         % The case when order has been defined
